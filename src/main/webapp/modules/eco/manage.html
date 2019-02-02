@@ -1,0 +1,269 @@
+<style>
+#ecoTree a.action {
+	display:none;
+}
+#ecoTree a[class*="level"]:hover a {
+	display:inline-block;
+}
+.empty p {
+	margin-top:60px;
+	
+	text-align:center;
+	text-weight:600;
+}
+</style>
+<div class="wrapper-content">
+	<div class="row">
+		<div class="col-sm-12">
+		    <div class="ibox float-e-margins">
+		        <div class="ibox-title">
+		            <h5>生态链信息</h5>
+		        </div>
+		        <div class="ibox-content">
+		        	<div class="tabs-container">
+	                    <ul class="nav nav-tabs">
+	                        <li class="active"><a data-toggle="tab" href="#tab-ecoMain" aria-expanded="true">我的生态链</a>
+	                        </li>
+	                        <li class=""><a data-toggle="tab" href="#tab-ecoJoin" aria-expanded="false">我参与的生态链</a>
+	                        </li>
+	                    </ul>
+	                    <div class="tab-content">
+	                        <div id="tab-ecoMain" class="tab-pane active">
+	                            <div class="panel-body">
+			        				<div class="row">
+		                                <div class="col-sm-8">
+						        			<div class="ztree-panel" style="min-height:444px">
+												<input class="search" id="ecoTreeKey" placeholder="生态链查询">
+												<ul id="ecoTree" class="ztree"></ul>
+											</div>
+						        		</div>
+						        		<div class="col-sm-4" id="ecoTreeBrands-view"></div>
+			        				</div>
+	                            </div>
+	                        </div>
+	                        <div id="tab-ecoJoin" class="tab-pane">
+	                            <div class="panel-body">
+		                            <div class="tabs-container">
+						                <div class="tabs-left" id="tabJoins-view"></div>
+						            </div>
+	                            </div>
+	                        </div>
+	                    </div>
+                	</div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+</div>
+<script id="tabJoinsData" type="text/html">
+{{# if(d.length > 0) { }}
+<ul class="nav nav-tabs" style="margin:0">
+{{# layui.each(d, function(index, item){ var active = '';}}
+{{# if (index == 0) {  active = 'active'; } }}
+<li class="{{active}}">
+    <a data-toggle="tab" href="#tabJoin{{index}}" onclick="showEcoJoinTree({{index}})">{{item.name}}</a>
+</li>
+{{# }); }}
+</ul>
+<div class="tab-content ">
+{{# layui.each(d, function(index, item){ var active = '';}}
+{{# if (index == 0) {  active = 'active'; } }}
+<div id="tabJoin{{index}}" class="tab-pane {{active}}">
+	<div style="float:left; width: 50%; padding: 0 20px;">
+	<div class="ztree-panel" style="min-height:444px">
+		<input class="search" id="ecoJoinTree{{index}}Key" placeholder="生态链查询">
+		<ul id="ecoJoinTree{{index}}" class="ztree"></ul>
+	</div>
+	</div>
+	<div id="ecoJoinTree{{index}}Brands-view" style="width: 30%;float:right"></div>
+</div>
+{{# }); }}
+</div>
+{{# } else { }}
+当前主体没有参与其他生态链
+{{# } }}
+</script>
+<script id="ecoBrandsDatas" type="text/html">
+<blockquote style="margin-bottom: 20px;">【{{d.ecoName}}】代理品牌</blockquote>
+{{# if(d.success) { }}
+{{# if(d.result.length > 0) { }}
+<ul class="list-group">
+	{{# layui.each(d.result, function(index, item){ }}
+    <li class="list-group-item">
+        {{item.brandName}}
+    </li>
+	{{# }); }}
+</ul>
+{{# } else { }}
+未代理品牌
+{{# } }}
+{{# } else { }}
+{{d.message}}
+{{# } }}
+</script>
+<script>
+var ecoJoinDatas = [];
+/**
+ * 加载我的生态链
+ */
+ajaxRequest({
+	url: base + 'eco/getMain',
+	type: "get"
+}, function(res) {
+	if (res.success) {
+		eminZtree({
+			id: 'ecoTree',
+			idKey: "nodeId",
+			pIdKey: "parentNodeId",
+			sync: {
+				zNodes: res.result,
+				expandAll: true
+			}
+		},function(ztree, treeNode){
+			getBrandsByNode_main({
+				nodeId: treeNode.nodeId,
+				nodeName: treeNode.name
+			})
+		});
+	}
+});
+/**
+ * 加载我参与的生态链
+ */
+ajaxRequest({
+	url: base + 'eco/getJoins',
+	type: "get"
+}, function(res) {
+	if (res.success) {
+		var tpl = tabJoinsData.innerHTML,
+			view = $('#tabJoins-view'),
+			datas = res.result,
+			fisrtNode = {};
+		laytpl(tpl).render(datas, function(html){
+			view.html(html);
+			
+			for (i = 0; i < datas.length; i++) {
+				ecoJoinDatas.push({
+					_index: i,
+					id: 'ecoJoinTree' + i,
+					treeNodes: datas[i].tree,
+					ecmId: datas[i].ecmId
+				});
+			}
+			showEcoJoinTree(0);
+		});
+		
+	}
+});
+
+/**
+ * 根据下标显示我参与的生态链数据
+ */
+function showEcoJoinTree(_index) {
+	for (i = 0; i < ecoJoinDatas.length; i++) {
+		var obj = ecoJoinDatas[i];
+		if (obj._index == _index) {
+			eminZtree({
+				id: obj.id,
+				idKey: "nodeId",
+				pIdKey: "parentNodeId",
+				sync: {
+					zNodes: obj.treeNodes,
+					expandAll: true
+				},
+				checkList: [getNodeByEcmId(obj.treeNodes)]
+			},function(ztree, treeNode){
+				var treeId = ztree.setting.treeId;
+				if (treeNode.queryBrandFlag) {
+					getBrandsByNode_join({
+						treeId: treeId,
+						ecmId: getEcmIdByTreeId(treeId),
+						nodeId: treeNode.nodeId,
+						nodeName: treeNode.name
+					});
+				} else {
+					var tpl = ecoBrandsDatas.innerHTML,
+						view = $('#' + treeId + 'Brands-view');
+					
+					laytpl(tpl).render({
+						ecoName: treeNode.name,
+						success: false,
+						message: '您没有权限查看'
+					}, function(html){
+						view.html(html);
+					});
+				}
+			});
+			return false;
+		}
+	}
+}
+
+function getNodeByEcmId(nodes) {
+	for (i == 0; i < nodes.length; i++) {
+		if (nodes[i].ecmId == globalEcmId) {
+			console.dir(nodes[i]);
+			return nodes[i];
+		}
+	}
+}
+/**
+ * 根据生态链TreeId获得主体编号
+ */
+function getEcmIdByTreeId(treeId){
+	var ecmId = 0;
+	for (i = 0; i < ecoJoinDatas.length; i++) {
+		var obj = ecoJoinDatas[i];
+		if (obj.id == treeId) {
+			ecmId = obj.ecmId;
+		}
+	}
+	return ecmId;
+}
+
+function getBrandsByNode_join(p, callback) {
+	ajaxRequest({
+		url: base + 'distributor/getBrandsByNodeIdAndEcmId',
+		data: {
+			ecmId: p.ecmId,
+			nodeId: p.nodeId
+		},
+		type: "get"
+	}, function(res) {
+		var tpl = ecoBrandsDatas.innerHTML,
+			view = $('#' + p.treeId + 'Brands-view');
+		
+		if (typeof res == 'string') {
+			res = JSON.parse(res);
+		}
+		
+		res.ecoName = p.nodeName;
+		laytpl(tpl).render(res, function(html){
+			view.html(html);
+		});
+	});
+}
+
+function getBrandsByNode_main(p, callback) {
+	ajaxRequest({
+		url: base + 'distributor/getBrandsByNodeId',
+		data: {
+			nodeId: p.nodeId
+		},
+		type: "get"
+	}, function(res) {
+		var tpl = ecoBrandsDatas.innerHTML,
+			view = $('#ecoTreeBrands-view');
+		
+		if (typeof res == 'string') {
+			res = JSON.parse(res);
+		}
+		
+		res.ecoName = p.nodeName;
+		laytpl(tpl).render(res, function(html){
+			view.html(html);
+		});
+	});
+}
+</script>
+

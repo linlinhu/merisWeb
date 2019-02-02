@@ -1,0 +1,387 @@
+<style>
+.pform-cate-box {
+	width: 100%;
+	min-height: 33px;
+	background: #fff;
+	padding: 3px !important;
+	border: 1px solid #ccc;
+}
+.pform-cate-box li {
+	display: inline-block !important;
+	margin: 5px;
+}
+
+.wizard-big.wizard > .content {
+    min-height: 450px;
+}
+.labels-chosen {
+	padding: 15px 0;
+	magrin:0;
+	min-height: 200px;
+}
+
+.labels-chosen li {
+	display: inline-block;
+	margin-right: 15px;
+}
+.labels-chosen li>span {
+	display: block;
+	padding: 7px 5px;
+	background: #f8f8f8;
+	color: #5a98de;
+	border: 1px solid #93b6dd;
+	cursor: pointer;
+	margin-bottom: 10px;
+	float: left;
+	height: 35px;
+}
+.labels-chosen li>div.l-oper {
+	float: left;
+	height: 35px;
+	border: 1px solid #93b6dd;
+	border-left: 0;
+	background: #f8f8f8;
+	color: #5a98de;
+	display: none;
+}
+
+.labels-chosen li > div.l-oper > div {
+	line-height: 33px;
+	float: left;
+	border-right: 1px solid #93b6dd;
+	width: 20px;
+	text-align: center;
+}
+.labels-chosen li > div.l-oper > div:last-child {
+	border-right: 0;
+}
+.labels-chosen li:hover > div.l-oper {
+	display: block;
+}
+.labels-chosen li > div.l-oper > div:hover,
+.labels-chosen li>span:hover,
+.labels-chosen li>span.selected {
+	background: #5a98de;
+	color: #fff;
+}
+.labels-chosen li>span.disabled {
+	cursor: not-allowed;
+	background: #ccc;
+	border: 1px solid #ccc;
+	color: #444;
+}
+
+.featureTpl-title {
+	font-size: 16px;
+}
+.pformFeature-view .form-group {
+	padding: 0 20px;
+}
+.labels-chosen-show {
+	line-height: 20px;
+	padding: 8px 0;
+}
+.labels-chosen-show > span {
+	font-weight: bold;
+	border-right: 1px solid;
+	padding: 0 5px;
+}
+</style>
+<div class="wrapper-content">
+	<div class="hide" id="tagsChosen" style="padding: 20px">
+      	<div class="filter-line">
+			<form method="get" class="tag-search-form" id="tagsChosenSearchForm">
+                <input placeholder="名称模糊查询" class="form-control" type="text" name="keyword" value="${keyword!''}">
+                <button type="button" class="btn btn-primary" onclick="pageTagsChosen(1, 20)">搜索</button>
+                <button type="button" class="btn btn-default" onclick="resetTagsChosen()">重置</button>
+                <a class="btn btn-primary" style="float: right" alt="添加标签" title="添加标签" href="javascript:pro_prdTagEdit();"><i class="fa fa-plus"></i></a>
+			</form>
+		</div>
+		<div class="labels-chosen-show" id="proprdTagsShow-view"></div>
+		<script id="proprdTagsShowData" type="text/html">
+		已选
+		{{# if(d && d.length > 0) { }}
+		{{# layui.each(d, function(index, item){ 
+			var style = "";
+			if (index + 1 == d.length) {
+				style = 'style="border:0"';
+			}
+		}}
+			<span {{style}}>{{item.name}}</span>
+		{{# }); }}
+		共<b>{{d.length}}</b>个产品标签， 最多可选<b>10</b>个。
+		{{# } else { }}
+			暂无
+		{{# } }}
+		</script>
+		<ul class="labels-chosen" id="tagsChosenLst-view"></ul>
+		<script id="tagsChosenLstDatas" type="text/html">
+		{{# if(d && d.resultList && d.resultList.length > 0) { }}
+		{{# layui.each(d.resultList, function(index, item){ }}
+			<li><span class="{{item.isSelect == true ? 'selected': ''}}" title="选中{{item.name}}" alt="title="选中'{{item.name}}'" onclick="toggleTclabelsSelect(this)" data-id="{{item.id}}">{{item.name}}</span>
+				<div class="l-oper">
+					<div title="编辑'{{item.name}}'" alt="title="编辑'{{item.name}}'" onclick="pro_prdTagEdit({{item.id}}, '{{item.name}}')"><i class="fa fa-edit"></i></div>
+					<div title="删除'{{item.name}}'" alt="title="删除'{{item.name}}'" onclick="pro_prdTagDel_a({{item.id}})"><i class="fa fa-remove"></i></div>
+				</div>
+			</li>
+		{{# }); }}
+		{{# } else { }}
+		暂无数据
+		{{# } }}
+		</script>
+		<div id="tagsChosenPage"></div>
+	</div>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <h5>
+                    	<#if product?? >编辑<#else>添加</#if>产品信息
+					</h5>
+                    <div class="ibox-tools">
+                        <a class="btn btn-white btn-bitbucket btn-xs" href="javascript: goPage('index')">
+                            <i class="fa fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="ibox-content"> 
+                    <form id="productForm" class="form-horizontal">
+						<input type="hidden" name="id">
+		            	<div class="form-group">
+		                    <label class="col-sm-2 control-label">*产品名称</label>
+		                    <div class="col-sm-10">
+								<input class="form-control" placeholder="输入产品名称" type="text" name="name" value="">
+		                    </div>
+							
+						</div>
+               			<div class="hr-line-dashed"></div>
+               			
+                 		<div class="form-group">
+               				<label class="col-sm-2 control-label">*品牌</label>
+							<div class="col-sm-10">
+								<select class="form-control" name="brandId">
+		                   		<option value="">-- 请选择 --</option>
+		                   		<#list brands as b>
+		                   		<option value="${b.id}">${b.name}</option>
+		                        </#list>
+		                    	</select>
+							</div>
+						</div>
+						<div class="hr-line-dashed"></div>
+                       	<div class="form-group">
+                      		<label class="col-sm-2 control-label">所属分类</label>
+                     		<div class="col-sm-10" style="position:relative">
+                     			<input type="hidden" name="prdCategories">
+                     			<ul class="pform-cate-box user-defined" id="pformCateTreeFilter"></ul>
+								<div class="ztree-wrap" id="pformCateTreeWrap" style="right:15px; top:-1px;">
+									<input class="search" id="pformCateTreeKey" placeholder="类名模糊查询">
+									<ul id="pformCateTree" class="ztree"></ul>
+								</div>
+                     		</div>
+                 		</div>
+						<div class="hr-line-dashed"></div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label">产品标签</label>
+							<div class="col-sm-10">
+								<div class="labels" id="productTagsGenerate"></div>
+								<a class="chosen-tags" href="javascript:openTagsChosen()" style="line-height:35px;"><i class="fa fa-list"></i></a>
+							</div>
+						</div>
+						<div class="hr-line-dashed"></div>
+						
+						<div class="form-group">
+							<label class="col-sm-2 control-label">特性设置</label>
+							<div class="col-sm-10">
+								<div class="pformFeature-view" id="pformFeature-view"></div>
+								<script id="pformFeatureDatas" type="text/html">
+									
+		 						{{# if(d.length > 0) { var isSetBasic = false,isSetPack = false;}}
+								{{# layui.each(d, function(index, item){ }}
+								{{# if(item.type == 1){ }}
+								{{# if(!isSetBasic){ isSetBasic = true;}}	
+								<!--<div class="form-group">
+		                            <div class="featureTpl-title text-navy">基础特性设置</div>
+		                        </div>-->
+								{{# } }}
+		                        <div class="form-group">
+		                            <label class="control-label" style="float:left;">{{item.name}}</label>
+		                            <div class="col-sm-10">
+										<div class="labels" id="feature-labels-{{item.id}}"></div>
+		                            </div>
+		                        </div>
+								{{# } }}
+								{{# }); }}
+								{{# layui.each(d, function(index, item){ }}
+								{{# if(item.type == 2){ }}
+
+								{{# if(!isSetPack){ isSetPack = true;}}	
+								<div class="form-group">
+		                            <div class="featureTpl-title text-navy">包装规格</div>
+		                        </div>
+								{{# } }}
+		                        <div class="form-group">
+		                            <label class="control-label" style="float:left;">{{item.name}}</label>
+		                            <div class="col-sm-10">
+										<div class="labels" id="feature-labels-{{item.id}}"></div>
+		                            </div>
+		                        </div>
+								{{# } }}
+								{{# }); }}
+								{{# } else { }}
+								<div class="ft-tip">未选择所属分类，或已选择的分类不存在特性设置模板</div>
+								{{# } }}
+								</script>
+							</div>
+						</div>
+
+						<div class="hr-line-dashed"></div>
+                 		<div class="form-group">
+                     		<label class="col-sm-2 control-label">产品描述</label>
+                     		<div class="col-sm-10">
+								<textarea class="form-control" placeholder="输入产品描述" rows="6" name="describe"></textarea>
+                     		</div>
+						</div>
+						<div class="hr-line-dashed"></div>
+						<div class="form-group">
+						    <div class="col-sm-4 col-sm-offset-2">
+						        <button class="btn btn-primary" type="submit">保存内容</button>
+						    </div>
+						</div>
+                	</form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="${base}js/modules/product/form.js"></script>
+<script>
+	<#if product??>
+		productId = '${product.id!""}';
+		$('#productForm input[name = "id"]').val(productId);
+		$('#productForm input[name = "name"]').val('${product.name!""}');
+		<#if product.brand??>
+			$('#productForm select[name = "brandId"]').val('${product.brand.id!""}');
+		</#if>
+		$('#productForm textarea[name = "describe"]').html('${product.describe!""}');
+		<#if product.tags?? && product.tags?size gt 0>
+			<#list product.tags as t>
+			isRepeat = false;
+			for (i = 0; i < productTags.length; i++) {
+				if (productTags[i].id == '${t.tagId}') {
+					isRepeat = true;
+				}
+			}
+			if (!isRepeat) {
+				productTags.push({
+					id: '${t.tagId}',
+					name: '${t.tagName}'
+				});
+			}
+			</#list>
+		</#if>
+		<#if product.prdCategories?? && product.prdCategories?size gt 0>
+			<#list product.prdCategories as c>
+			productCates.push({
+				id: '${c.id}',
+				name: '${c.name}'
+			});
+			</#list>
+		</#if>
+
+		<#if product.prdFeatures?? && product.prdFeatures?size gt 0>
+			<#list product.prdFeatures as pf>
+			productFeatures.push({
+				id: '${pf.id}',
+				name: '${pf.value}',
+				prdFeatureTemplateId: '${pf.prdFeatureTemplateId}',
+				prdFeatureTemplateName: '${pf.prdFeatureTemplateName}',
+				productId: productId
+			});
+			</#list>
+		</#if>
+	</#if>
+	
+	// 赋值分类树的过滤器id和容器id，绑定控制
+	treeDisplay('pformCateTree');
+	// 产品分类赋值
+	valCateLst(productCates);
+	
+	// 界面布局，控制树容器展示位置
+	var el = $('#pformCateTreeFilter');
+		elWidth = parseInt(el.css('width').split('px')[0]);
+		
+	if (cateUlWidth == 0) {
+		cateUlWidth = elWidth-280;
+	}
+	el.css('width', cateUlWidth + 'px');
+	
+	// 生成分类树，异步加载数据
+	eminZtree({
+		id: 'pformCateTree',
+		async: {
+			url : '${base}prdCategory/tree',
+			expandAll: true
+		},
+		check: {
+			enable: true,
+			chkStyle: "checkbox",
+			chkboxType: { "Y": "", "N": "" }
+		},
+		checkList: productCates,
+		disabledIds: [1,2]
+	},function(ztree, treeNode){//选中树节点触发事件
+		var nodes = ztree.getCheckedNodes(true);
+		//将选中分类赋值
+		valCateLst(nodes);
+
+	});
+	
+	// 初始化产品标签器
+	initTagsLabel();
+
+	$("#productForm").validate({
+	    rules: {
+	    	name: {
+	            required: true,
+	            rangelength: [2,30]
+	        },
+	        brandId: {
+	        	required: true
+	        },
+	        describe: {
+	        	maxlength: 100
+	        }
+	    },
+	    messages: {
+	    	name: {
+	            required: icon + "请输入产品名称",
+	            rangelength: icon + "产品名称输入长度限制为2-30个合法字符"
+	        },
+	        brandId: {
+	            required: icon + "请选择品牌"
+	        },
+	        describe: {
+	        	maxlength: icon + '产品描述最多可输入100个字符'
+	        }
+	    },
+	    submitHandler:function(form){
+	    	var submitObj = $("#productForm").serializeObject();
+	    	
+	    	submitObj.tags = JSON.stringify(productTags);
+	    	productFeatures = [];
+	    	for (i = 0; i < productFeaturesMap.length; i++) {
+	    		var curPfs = productFeaturesMap[i].prdFeatures;
+	    		for (var j = 0; j < curPfs.length; j++) {
+	    			delete curPfs[j]['name'];
+	    			productFeatures.push(curPfs[j]);
+	    		}
+	    	}
+	    	submitObj.prdFeatures = JSON.stringify(productFeatures);
+	    	
+	    	save({
+	    		jsonStr: JSON.stringify(submitObj)
+	    	}, 'product');
+	    } 
+	});
+	
+</script>

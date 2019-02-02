@@ -1,0 +1,483 @@
+<#setting datetime_format='yyyy-MM-dd HH:mm:ss'>
+<#setting date_format='yyyy-MM-dd'>
+<style>
+thead .truck {
+	width:22%!important;
+}
+thead .driver {
+	width:45%!important;
+}
+tbody td {
+	position:relative;
+	padding-bottom:20px!important;
+}
+tbody .col-sm-6,
+tbody .col-lg-4 {
+	padding:0 10px 0 0!important;
+	overflow: hidden;
+	text-overflow:ellipsis;
+	white-space: nowrap;
+}
+.right{
+	text-align:right;
+	position:absolute;
+	bottom:0;
+	right:10px
+}
+.right .fa{
+	font-size:13px!important;
+}
+</style>
+<div class="wrapper-content">
+	<div class="row">
+		<div class="col-sm-12">
+		    <div class="ibox float-e-margins">
+		        <div class="ibox-title">
+		            <h5>物流信息</h5>
+		            <div class="ibox-tools">
+		                <a class="btn btn-primary" href="javascript: editName()" alt="添加物流信息" title="添加物流信息">
+		                    <i class="fa fa-plus"></i>
+		                </a>
+		            </div>
+		        </div>
+		        <div class="ibox-content">
+		        	<div class="filter-line">
+	                	<form method="get" class="dr-search-form" id="logisticInformationSearchForm">
+							<input type="hidden" name="page">
+                            <input placeholder="物流公司、车牌、司机查询" class="form-control" type="text" name="keyword" value="${keyword!''}" role="user-params">
+                            <button type="button" class="btn btn-primary" role="submit"><i class="fa fa-search"></i></button>
+                            <button type="button" class="btn btn-default" role="reset"><i class="fa fa-refresh"></i></button>
+	                 	</form>
+	                </div>
+		            <table class="footable table table-stripped toggle-arrow-tiny" id="logisticInformationTable" data-page-size="${logisticInformation.page.limit!10}" data-paging="false">
+		                <thead>
+		                        <tr>
+		                        	<th data-sort-ignore="true">序号</th>
+		                            <th>物流公司</th>
+		                            <th class="truck">公司车辆</th>
+		                         	<th class="driver">公司司机</th>
+		                        </tr>
+		                    </thead>
+		                    <tbody>
+		                    	<#if logisticInformations?? && logisticInformations.resultList?size gt 0>
+		                    	<#list logisticInformations.resultList as d>
+		                    		<tr>
+		                    			<td>${d_index + 1}</td>
+		                    			<td>
+		                    				${d.name}
+		                    				<p class="right">
+		                    					<a href="javascript: editName('${d.id}','${d.name}')" alt="编辑" title="编辑"><i class="fa fa-pencil text-navy">&nbsp;</i></a>&nbsp;
+		                    					<a href="javascript: remove('${d.id}', 'logisticInformation');" class="ipc-remove" alt="删除" title="删除"><i class="fa fa-trash text-navy" ></i></a>
+		                    				</p>
+		                    			</td>
+			                        	<td class="truck row">
+			                        		
+			                        		<#if d.trucks?size gt 0>
+				                        		<#list d.trucks as item>
+				                        			<span class="col-sm-6">${item.carNo}&nbsp;&nbsp;</span>
+				                        		</#list>
+			                        		<#else>
+			                        			暂缺
+			                        		</#if>
+			                        		
+			                        		<p  class="right">
+			                        			<#if d.trucks?size gt 0>
+			                        				<a href="javascript: clickTruck('${d.id}')" ><i class="fa fa-cog text-navy" alt="管理" title="管理">&nbsp;</i></a>&nbsp;
+			                        			</#if> 
+			                        			<a href="javascript: editTruck('editTruck',{logisticsCompanyId:'${d.id}'})" alt="添加" title="添加"><i class="fa fa-plus text-navy">&nbsp;</i></a>&nbsp;
+			                        		</p>
+			                        	</td>
+			                        	<td class="driver row">
+			                        		<#if d.drivers?size gt 0>
+				                        		<#list d.drivers as item>
+				                        			<span class="col-sm-6">${item.driverName} ${item.driverMobile}&nbsp;&nbsp;</span>
+				                        		</#list>
+			                        		<#else>
+			                        			暂缺
+			                        		</#if>
+			                        		<p  class="right">
+			                        			<#if d.drivers?size gt 0>
+			                        				<a href="javascript: clickDriver(${d.id})" alt="管理" title="管理"><i class="fa fa-cog text-navy">&nbsp;</i></a>&nbsp;
+			                        			</#if>
+			                        			<a href="javascript: editDriver('addDriver',{logisticsCompanyId:'${d.id}'})" alt="添加" title="添加"><i class="fa fa-plus text-navy">&nbsp;</i></a>&nbsp;
+			                        		</p>
+			                        	</td>
+		                        	</tr>
+		                        </#list>
+		                        <#else>
+		                        <tr>
+		                        	<td colspan="7">暂无数据</td>
+		                        </tr>
+		                        </#if>
+		                    </tbody>
+		            </table>
+		            <div class="text-right" id="personPage"></div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	var layuiPanel;
+		
+	$('.footable').footable(); // 初始化footable
+
+	<#if logisticInformation.page??>
+	initTable({
+		modelName: 'logisticInformation',
+		curr: '${logisticInformation.page.currentPage!1}',
+		totalPage: '${logisticInformation.page.totalPageNum!1}',
+		totalCount: '${logisticInformation.page.totalCount!1}',
+		limit: '${logisticInformation.page.limit!10}'
+	});
+	</#if>
+	//添加、编辑公司名称
+	function editName(id,name){
+		layer.prompt({
+			title: name ? '编辑物流公司名称' : '新增物流公司',  
+			formType: 0
+		}, function(val, index){
+			var val = $('.layui-layer-input').val(),
+				obj = {
+						id:id,
+						name: val,
+						description: ''
+					},
+				reg = /^[\u4e00-\u9fa5_a-zA-Z0-9]+$/,
+				html = '<input type="text" class="layui-layer-input" value="" maxlength="40">';
+			html += '<p style="margin-left:30px;"></p>';
+			$('.layui-layer-content').html(html);
+			$('.layui-layer-input').focus().val(val);
+			
+			if(reg.test(val)){
+				save({lcStr:JSON.stringify(obj)}, 'logisticInformation')
+				layer.close(index);
+			} else {
+				$('.layui-layer-content p').html('只能输入中文、字母、数字');
+			}
+		});
+		
+		$('.layui-layer-input').focus().val( name ? name : '');
+		$('.layui-layer-input').attr('maxLength','40');
+	}
+	
+	function clickDriver(id,callback){
+		var option = {
+			url:'${base}logisticInformation/queryDetails',
+			data:{
+				cId:id
+			},
+			type:'GET'
+		};
+		
+		ajaxRequest(option, function(result) {
+			if (result.success) {
+				if (callback) {
+					callback(result.result)
+				} else {
+					showDriverPanel(result.result)
+				}
+			} else {
+				layer.msg(result.message?'获取数据失败，原因可能是'+result.message:'获取数据失败',{icon: 5});
+			}
+		})
+	}
+	
+	function editDriver(idPrefix, option){
+		layuiPanel = layer.open({
+			type: 1,
+			skin : 'layui-layer-rim', //加上边框
+			title : option.id ? '编辑司机信息' : '添加司机',
+			area : [ '48%', '450px' ], //宽高
+			shadeClose: false, //开启遮罩关闭
+			content: '<div class="wrapper-content" id="' + idPrefix + 'Chosen">' + $('#driverEdit').html() + '</div>'
+		});
+		$('#'+ idPrefix +'Chosen form').validate({
+		    rules: {
+		    	driverName: {
+		            required: true,
+		            rangelength: [2,20],
+		            isName: true
+		        },
+		        driverMobile: {
+		            required: true,
+		            isMobile: true
+		        }
+		    },
+		    messages: {
+		    	driverName: {
+		            required: icon + "请输入司机姓名",
+		            rangelength: icon + "司机姓名输入长度限制为2-20个合法字符",
+		            isName:icon + "允许输入中文、字母、数字、空格，且不能以空格开始或结尾"
+		        },
+		        driverMobile: {
+		            required: icon + "请输入手机号码",
+		            isMobile: icon + "请输入有效的手机号码"
+		        }
+		    },
+		    submitHandler:function(form){
+		    	var submitObj =$('#'+ idPrefix +'Chosen form').serializeObject(),
+		    		params = {};
+		    	
+		    	params = {
+		    			tdStr: JSON.stringify(submitObj)
+		        };
+		    	saveDriver(params)
+		    } 
+		});
+		if(option && option.id) {
+			$('#'+ idPrefix +'Chosen input[name="id"]').val(option.id);
+			$('#'+ idPrefix +'Chosen input[name="driverName"]').val(option.driverName);
+			$('#'+ idPrefix +'Chosen input[name="driverMobile"]').val(option.driverMobile);
+		}
+		$('#' + idPrefix + 'Chosen input[name="logisticsCompanyId"]').val(option.logisticsCompanyId)
+		
+	}
+	
+	//展示司机列表面板
+	function showDriverPanel(result){
+		layuiPanel = layer.open({
+			type: 1,
+			skin : 'layui-layer-rim', //加上边框
+			title :'司机信息',
+			area : [ '60%', '450px' ], //宽高
+			shadeClose: false, //开启遮罩关闭
+			content: '<div class="wrapper-content" id="driverPanelChosen">' + $('#driverPanelTpl').html() + '</div>'
+		});
+		
+		renderDriverPanel(result)	
+	}
+	
+	function renderDriverPanel(result){
+		var driverPanelTpl = driverPanelDatas.innerHTML,//数据模板
+			driverPanelView = $('#driverPanelChosen #driverPanel-view');
+		
+		laytpl(driverPanelTpl).render(result, function(html){
+			driverPanelView.html(html);
+		});
+		$('#driverPanelChosen .footable').removeClass('footable-loaded');
+		$('.footable').footable(); // 初始化footable
+	}
+	
+	//编辑或者新增司机
+	function saveDriver(str){
+		var option = {
+				url:'${base}logisticInformation/saveOrUpdateTD',
+				data:str,
+				type:'GET'
+			};
+		ajaxRequest(option, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success){
+				var obj = JSON.parse(str.tdStr);
+				layer.close(layuiPanel);
+				layer.msg('保存成功',{icon: 1});
+				if(obj.id){
+					clickDriver(obj.logisticsCompanyId,function(result){
+						if(result && result.drivers && result.drivers.length > 0) {
+							renderDriverPanel(result)
+						} else {
+							layer.closeAll();
+						}
+					}); 
+				}
+				goPage('index');
+				
+			} else {
+				layer.msg(result.message?'保存失败，原因是'+result.message:'保存失败',{icon: 5});
+			}	
+		})
+	}
+	
+	//删除司机
+	function deleteDriver(option){
+		var params = {
+				url:'${base}logisticInformation/deleteTD',
+				data:{
+					driverMobile:option.driverMobile
+				},
+				type:'GET'
+			};
+		ajaxRequest(params, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success){
+				layer.msg('删除成功',{icon: 1});
+				clickDriver(option.logisticsCompanyId,function(result){
+					if(result && result.trucks && result.trucks.length > 0) {
+						renderDriverPanel(result)
+					} else {
+						layer.closeAll();
+					}
+				});
+				goPage('index');
+			} else {
+				layer.msg(result.message?'删除失败，原因是'+result.message:'删除失败',{icon: 5});
+			}	
+		})
+	}
+	
+	function clickTruck(id,callback){
+		var option = {
+			url:'${base}logisticInformation/queryDetails',
+			data:{
+				cId:id
+			},
+			type:'GET'
+		};
+		
+		ajaxRequest(option, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success) {
+				if (callback) {
+					callback(result.result)
+				} else {
+					showTruckPanel(result.result)
+				}
+			} else {
+				layer.msg(result.message?'获取数据失败，原因是'+result.message:'获取数据失败',{icon: 5});
+			}
+ 			
+		})
+	}
+	
+	//展示车辆列表面板
+	function showTruckPanel(result){
+		layuiPanel = layer.open({
+			type: 1,
+			skin : 'layui-layer-rim', //加上边框
+			title :'车辆信息',
+			area : [ '60%', '450px' ], //宽高
+			shadeClose: false, //开启遮罩关闭
+			content: '<div class="wrapper-content" id="truckPanelChosen">' + $('#truckPanelTpl').html() + '</div>'
+		});
+		renderTruckPanel(result);
+		
+	}
+	
+	function renderTruckPanel(result) {
+		var truckPanelTpl = truckPanelDatas.innerHTML,//数据模板
+			truckPanelView = $('#truckPanelChosen #truckPanel-view');
+		
+		
+		laytpl(truckPanelTpl).render(result, function(html){
+			truckPanelView.html(html);
+		});
+		$('#truckPanelChosen .footable').removeClass('footable-loaded');
+		$('.footable').footable(); // 初始化footable
+	}
+	
+	//删除车辆
+	function deleteTruck(option){
+		
+		var params = {
+				url:'${base}logisticInformation/deleteTruck',
+				data:{
+					carNo:option.carNo
+				},
+				type:'GET'
+			};
+		ajaxRequest(params, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success){
+				layer.msg('删除成功',{icon: 1});
+				clickTruck(option.logisticsCompanyId,function(result){
+					if(result && result.trucks && result.trucks.length > 0) {
+						renderTruckPanel(result)
+					} else {
+						layer.closeAll();
+					}
+				});
+				goPage('index');
+			} else {
+				layer.msg(result.message?'删除失败，原因是'+result.message:'删除失败',{icon: 5});
+			}	
+		})
+	}
+	//显示编辑或者新增车辆的界面
+	function editTruck(idPrefix, option){
+		
+		layuiPanel = layer.open({
+			type: 1,
+			skin : 'layui-layer-rim', //加上边框
+			title : option.id ? '编辑车辆信息' : '添加车辆',
+			area : [ '48%', '400px' ], //宽高
+			shadeClose: false, //开启遮罩关闭
+			content: '<div class="wrapper-content" id="' + idPrefix + 'Chosen">' + $('#truckEdit').html() + '</div>'
+		});
+		$('#'+ idPrefix +'Chosen form').validate({
+		    rules: {
+		    	carNo: {
+		            required: true,
+		            licenseTag: true
+		        }
+		    },
+		    messages: {
+		    	carNo: {
+		            required: icon + "请输入车牌号",
+		            licenseTag:icon + "请输入有效的车牌号"
+		        }
+		    },
+		    submitHandler:function(form){
+		    	var submitObj =$('#'+ idPrefix +'Chosen form').serializeObject(),
+		    		params = {},
+		    		belongsIndustryIds = submitObj.industryIds;
+		    	
+		    	params = {
+		    			truckStr: JSON.stringify(submitObj)
+		        };
+		    	saveTruck(params)
+		    }
+		});
+		if(option && option.id){
+			$('#' + idPrefix + 'Chosen input[name="id"]').val(option.id)
+			$('#' + idPrefix + 'Chosen input[name="carNo"]').val(option.carNo)
+		}
+		$('#' + idPrefix + 'Chosen input[name="logisticsCompanyId"]').val(option.logisticsCompanyId)
+	}
+	//编辑或者新增车辆
+	function saveTruck(str){
+		var loading=layer.load(),
+			option = {
+				url:'${base}logisticInformation/saveOrUpdateTruck',
+				data:str,
+				type:'GET'
+			};
+		ajaxRequest(option, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success){
+				var obj = JSON.parse(str.truckStr);
+				layer.close(layuiPanel);
+				layer.msg('保存成功',{icon: 1});
+				if(obj.id){
+					clickTruck(obj.logisticsCompanyId,function(result){
+						if(result && result.trucks && result.trucks.length > 0) {
+							renderTruckPanel(result)
+						} else {	
+							layer.closeAll();
+						}
+					}); 
+				}
+				goPage('index');
+			} else {
+				layer.msg(result.message?'保存失败，原因是'+result.message:'保存失败',{icon: 5});
+			}	
+		})
+	}
+	
+	jQuery.validator.addMethod("isName", function(value, element) {       
+	    return this.optional(element) || /^[\u4E00-\u9FA5A-Za-z0-9]+[ ]{0,}[\u4E00-\u9FA5A-Za-z0-9]+$/.test(value);       
+	}, "不符合规则");
+	jQuery.validator.addMethod("licenseTag", function(value, element) {       
+	    return this.optional(element) || /^[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领A-Z]{1}[A-Z]{1}[ ]?[A-Z0-9]{4}[A-Z0-9挂学警港澳]{1}$/.test(value);       
+	}, "不符合规则");
+</script>

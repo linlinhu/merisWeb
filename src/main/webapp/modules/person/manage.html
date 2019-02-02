@@ -1,0 +1,174 @@
+<#setting datetime_format='yyyy-MM-dd HH:mm:ss'>
+<#setting date_format='yyyy-MM-dd'>
+<style>
+.dot {
+	display:inline-block;
+	margin-left:10px;
+	height:15px;
+	width:15px;
+	border-radius:100% 100%;
+	background:gray;
+}
+.lightgreen {
+	background:lightgreen;
+}
+</style>
+<div class="wrapper-content">
+	<div class="row">
+		<div class="col-sm-12">
+		    <div class="ibox float-e-margins">
+		        <div class="ibox-title">
+		            <h5>用户管理</h5>
+		            <div class="ibox-tools">
+		                <a class="btn btn-primary" href="javascript: goPage('form')" alt="添加用户" title="添加用户">
+		                    <i class="fa fa-plus"></i>
+		                </a>
+		            </div>
+		        </div>
+		        <div class="ibox-content">
+		        	<div class="filter-line">
+	                	<form method="get" class="dr-search-form" id="personSearchForm">
+							<input type="hidden" name="page">
+							<span class="form-group">
+								<input type="hidden" name="ecmId" value="${searchEcmId!''}" role="user-params">
+	                        	<input class="form-control" type="text" name="ecmName" 
+	                        	<#if searchEcmId?? && searchEcmId?length gt 0>
+	                        		value="${ecmName!''}" 
+	                        	</#if>
+	                        	readonly placeholder="请选择一个主体" onclick="choseAEcm(this, 'pChoseEcm', 'personSearchForm')">
+	                        </span>
+                            <input placeholder="账号、手机号查询" class="form-control" type="text" name="keyword" value="${keyword!''}" role="user-params">
+                            <button type="button" class="btn btn-primary" role="submit"><i class="fa fa-search"></i></button>
+                            <button type="button" class="btn btn-default" role="reset"><i class="fa fa-refresh"></i></button>
+	                 	</form>
+	                </div>
+		            <table class="footable table table-stripped toggle-arrow-tiny" id="personTable"  data-page-size="${persons.page.limit!10}"  data-paging="false">
+		                <thead>
+		                        <tr>
+		                        	<th data-sort-ignore="true">头像</th>
+		                            <th>账号</th>
+		                            <th data-hide="all">姓名</th>
+		                         	<th data-hide="all">性别</th>
+		                         	<th>昵称</th>
+		                         	<th>所属主体</th>
+		                            <th>手机号</th>
+		                           	<th>在线状态</th>
+		                            <th data-sort-ignore="true">操作</th>
+		                            <th data-hide="all">用户状态</th>
+		                            <th data-hide="all">电子邮箱</th>
+		                            <th data-hide="all">上次登录时间</th>
+		                        </tr>
+		                    </thead>
+		                    <tbody>
+		                    	<#if persons?? &&  persons.page.totalCount gt 0 >
+		                    	<#list persons.page.resultList as d>
+		                    		<tr>
+		                    			<td>
+				                        	<img height="30" width="30" class="img-circle"
+				                        	<#if d.portrait?? && d.portrait.storage??>
+				                        		src="${d.portrait.storage[1].fileStorageUrl}"
+				                        	<#else>
+		                                    	src="${base}img/male.png"
+				                        	</#if>
+		                                    onerror="this.src='${base}img/male.png'"
+				                        	/>	
+		                    			</td>
+		                    			<td>${d.username}</td>
+			                        	<td>
+			                        		<#if d.realName?? && d.realName?length gt 0>
+			                        			${d.realName}
+			                        		<#else>
+		                                    	-
+		                                    </#if> 
+			                        	</td>
+			                        	<td>
+			                        		<#if d.gender?? && d.gender?length gt 0>
+			                        			${d.gender}
+			                        		<#else>
+		                                    	-
+		                                    </#if>
+			                        	</td>
+			                        	<td>
+			                        		<#if d.nickname?? && d.nickname?length gt 0>
+			                        			${d.nickname}
+			                        		<#else>
+		                                    	-
+		                                    </#if>
+			                        	</td>
+			                        	<td>${d.ecmName}</td>
+			                        	<td>
+			                        		<#if d.mobile?? && d.mobile?length gt 0>
+			                        			${d.mobile}
+			                        		<#else>
+		                                    	-
+		                                    </#if>
+			                        	</td>
+			                        	<td >
+			                        		<#if d.onlineFlag?? && d.onlineFlag==1>
+			                        			<a class="dot lightgreen" alt="在线" title="在线"></a>
+			                        		<#else>
+		                                    	<a class="dot" alt="离线" title="离线"></a>
+		                                    </#if>
+			                        	</td>
+			                        	<td>
+			                        		<#if d.userType == 3>
+			                        			<a href="javascript: goPage('form',{id:${d.id}})" alt="编辑" title="编辑"><i class="fa fa-pencil text-navy">&nbsp;</i></a>&nbsp;
+			                        		<#else>
+				                        		<#if d.useAble == true>
+				                        			<a href="javascript: goPage('form',{id:${d.id}})" alt="编辑" title="编辑"><i class="fa fa-pencil text-navy">&nbsp;</i></a>&nbsp;
+			                                    	<a href="javascript: setStatus('person', '${d.id}', 1);" alt="禁用" title="禁用"><i class="fa fa-minus-circle text-navy">&nbsp;</i></a>&nbsp;
+			                                    <#else>
+			                                    	<a href="javascript: setStatus('person', '${d.id}', 0);" alt="启用" title="启用"><i class="fa fa-play-circle text-navy">&nbsp;</i></a>&nbsp;
+			                                    </#if>
+				                        		<a href="javascript: remove('${d.id}', 'person');" class="ipc-remove" alt="删除" title="删除"><i class="fa fa-trash text-navy" ></i></a>
+			                        		</#if>
+			                        	</td>
+			                        	<td>
+			                        	<#if d.useAble == true>
+			                        		正常
+			                        	<#else>
+			                        		禁用
+			                        	</#if>
+			                        	</td>
+			                        	<td>
+			                        		<#if d.email?? && d.email?length gt 0>
+			                        			${d.email}
+			                        		<#else>
+		                                    	-
+		                                    </#if>
+			                        	
+			                        	</td>
+			                        	<td>
+			                        		<#if d.loginTime?? && d.loginTime?length gt 0>
+			                        			${d.loginTime?number_to_datetime}
+			                        		<#else>
+		                                    	-
+		                                    </#if>
+			                        	</td>
+		                        	</tr>
+		                        </#list>
+		                        <#else>
+		                        <tr>
+		                        	<td colspan="7">暂无数据</td>
+		                        </tr>
+		                        </#if>
+		                    </tbody>
+		            </table>
+		            <div class="text-right" id="personPage"></div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$('.footable').footable(); // 初始化footable
+	<#if persons.page??>
+	initTable({
+		modelName: 'person',
+		curr: '${persons.request.currentPage!1}',
+		totalPage: '${persons.page.totalPageNum!1}',
+		totalCount: '${persons.page.totalCount!1}',
+		limit: '${persons.page.limit!10}'
+	});
+	</#if>	
+</script>

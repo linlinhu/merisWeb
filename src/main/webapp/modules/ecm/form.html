@@ -1,0 +1,281 @@
+<style>
+.has-error .chosen-choices {
+	border-color: #ed5565;
+}
+</style>
+<div class="wrapper-content">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <h5><#if ecm?? > 编辑<#else>添加</#if>主体信息</h5>
+                    <div class="ibox-tools">
+                        <a class="btn btn-white btn-bitbucket btn-xs" href="javascript: goPage('index')">
+                            <i class="fa fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+               		 <form method="get" class="form-horizontal" id="ecmForm">
+             		 	<input type="hidden" name="id">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">企业名称</label>
+                            <div class="col-sm-10">
+								<input class="form-control" type="text" name="name" value="">
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">企业简称</label>
+                            <div class="col-sm-10">
+								<input class="form-control" type="text" name="abbreviation" value="">
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">三证合一代码</label>
+                            <div class="col-sm-10">
+                            	<#if ecm??>
+                            		<input type="hidden" name="sn" value="${ecm.sn}">
+                            		<span class="form-control">${ecm.sn}</span>
+                            	<#else>
+									<input class="form-control" type="text" name="sn" value="">
+                            	</#if>
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group" id="ecmForm-industry-validate">
+                            <label class="col-sm-2 control-label">所属行业</label>
+                            <div class="col-sm-10">
+								<select class="form-control industry-select" multiple='multiple' name="industryIds">
+                                	<#if industries??>
+					                	<#list industries as d>
+											<option value="${d.id}"
+												<#if ecm??>
+												<#list ecm.industories as industry>
+	                                   				<#if industry.id == d.id>
+	                                   				selected= true            				
+	                                   				</#if>
+                                   				</#list>
+                                   				</#if>
+											>${d.name}</option>
+			                        	</#list>
+		                        	</#if>
+                                </select>
+                            	<span class="help-block m-b-none error"></span>
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">企业图标</label>
+                            <div class="col-sm-10">
+                            	<div class="upload-input">
+                            		<input class="form-control" type="hidden" name="logo">
+                            		<i class="fa fa-plus text-navy" onclick="uploadEcmImgResources()"></i>
+                            		<p class="upload-tips">建议上传长宽比例为1:1的图片</p>
+                            	</div>
+								<div class="upload-img hide">
+									<img class="pro-img"/>
+									<span class="removeImg"><i class="fa fa-times"></i></span>
+								</div>
+                            </div> 
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">企业规模(人)</label>
+                            <div class="col-sm-10">
+                                <select class="form-control" name="scale">
+                                	<option value="">-- 请选择 --</option>
+                                	<option value="1000人以上">1000人以上</option>
+                                	<option value="300-1000人">300-1000人</option>
+                                	<option value="20-300人">20-300人</option>
+                                	<option value="20人以下">20人以下</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">企业地址</label>
+                            <div class="col-sm-10">
+								<textarea class="form-control" rows="2" name="address"></textarea>
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">企业描述</label>
+                            <div class="col-sm-10">
+								<textarea class="form-control" rows="6" name="describe"></textarea>
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <div class="col-sm-4 col-sm-offset-2">
+                                <button class="btn btn-primary" type="submit">保存内容</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+				
+<script>
+	
+	<#if ecm??>
+	$('#ecmForm input[name = "id"]').val('${ecm.id!""}');
+	$('#ecmForm input[name = "name"]').val('${ecm.name!""}');
+	$('#ecmForm input[name = "abbreviation"]').val('${ecm.abbreviation!""}');
+	$('#ecmForm input[name = "logo"]').val('${ecm.logoStr!""}');
+	$('#ecmForm select[name = "scale"]').val('${ecm.scale!""}');
+	$('#ecmForm textarea[name = "address"]').html('${ecm.address!""}');
+	$('#ecmForm textarea[name = "describe"]').html('${ecm.describe!""}');
+		<#if ecm.logo?? && ecm.logo.storage??>
+			showUploadImg(JSON.parse('${ecm.logoStr}'),'#ecmForm');
+		</#if>
+	</#if>
+	$('.industry-select').chosen({
+		allow_single_deselect: true, //删除选项
+		max_selected_options: 20, //多选上限
+		disable_search:true, //禁用搜索框
+		placeholder_text_multiple:'请选择所属行业' //提示值
+	}); 
+
+	$('.industry-select').on('change', function(e, params) {
+		var res = $(this).val(),
+			validEl = $('#ecmForm-industry-validate');
+		
+		if (res && res.length > 0 && validEl.hasClass('has-error') && res.length <= 3) {
+			validEl.removeClass('has-error');
+			validEl.find('span.error').hide().html('');
+		}
+	});
+	$("#ecmForm").validate({
+        rules: {
+        	name: {
+                required: true,
+                rangelength: [2,30],
+                isContainsSpecialChar: true
+            },
+            abbreviation:{
+                rangelength: [2,20],
+                isContainsSpecialChar: true
+            },
+            sn: {
+                required: true,
+                rangelength: [18,18],
+                isRightfulString: true,
+                isSN: true
+            },
+            address: {
+                rangelength: [1,50]
+            },
+            describe: {
+                rangelength: [1,200]
+            }
+        },
+        messages: {
+        	name: {
+                required: icon + "请输入主体名称",
+                rangelength: icon + "主体名称输入长度限制为2-30个合法字符"
+            },
+            abbreviation: {
+                 rangelength: icon + "主体名称输入长度限制为2-20个合法字符"
+            },
+            sn: {
+                required: icon + "请输入三证合一代码",
+                rangelength: icon + "三证合一代码输入长度限制为18个合法字符",
+                isSN:icon + "三证合一代码仅由数字和大写字母组成"
+            },
+            address: {
+            	rangelength: icon + "主体地址输入长度限制为1-50个合法字符"
+            },
+            describe: {
+            	rangelength: icon + "主体描述输入长度限制为1-200个合法字符"
+            }
+        },
+        submitHandler:function(form){
+        	var submitObj = $("#ecmForm").serializeObject(),
+        		params = {},
+        		belongsIndustryIds = submitObj.industryIds;
+        	
+        	
+        	console.dir(typeof belongsIndustryIds);
+	    	if (belongsIndustryIds) {
+	        	if (typeof belongsIndustryIds == 'object') { 
+	        		if (belongsIndustryIds.length > 3) {
+		        		$('#ecmForm-industry-validate').addClass('has-error');
+		        		$('#ecmForm-industry-validate span.error').show().html(icon + '所属行业的选择不得超过三个');
+		        		return false;
+	        		}
+	        		submitObj.industryIds = belongsIndustryIds.join(',');
+	        	}
+	    	} else {
+	    		submitObj.industryIds = '';
+	    	}
+        	if(submitObj.logo.length > 0) {
+        		submitObj.logo = JSON.parse(submitObj.logo);
+        	}
+        	
+        	params = {
+            		jsonStr: JSON.stringify(submitObj)
+            };
+        	save(params, 'ecm');
+        } 
+	});
+	$.validator.addMethod("isSN",function(value, element, params){  
+        var phone = /[0-9A-Z]{18}/;  
+        return this.optional(element)||(phone.test(value));  
+    },"*格式错误");
+	
+	$('#ecmForm .removeImg').on('click',function(){
+		removeUploadImg('#ecmForm');
+	})
+
+	function uploadEcmImgResources() {
+		var html =  '<div id="uploadInterface" style="z-index:999;">'+
+						'<div class="webuploader" id="emcImgResourcesUploader">'+
+							$('#webuploaderTPL').html() +
+					    '</div>'+
+					'</div>',
+			uploadPics = [];	
+					
+		layer.open({
+			type : 1,
+			title : '上传图片资源',
+			skin : 'layui-layer-rim', //加上边框
+			area : [ '60%', '450px' ], //宽高
+			content : '<div class="wrapper-content">' + html + '</div>',
+			btn : [ '确定'],
+			yes : function(lindex, layero) {
+				if (uploadPics.length == 0) {
+					layer.msg('请上传张图片后再点击此按钮', {icon: 5});
+					return false;
+				} else {
+					showUploadImg(uploadPics[0],'#ecmForm');
+					$('#ecmForm input[name="logo"]').parent().parent().parent().removeClass('has-error');
+					$('#ecmForm input[name="logo"]').parent().parent().parent().addClass('has-success');
+					layer.closeAll();
+				}
+				
+			}
+		});
+		
+		CUploadFiles({
+			uploaderId: 'emcImgResourcesUploader',
+			filesType: ['img'],
+			uploadUrl: '/file/upload.do',
+			fileNumLimit: 1
+		}, function(file, response){
+			if(response.success){
+				uploadPics.push(response.result);
+				
+			} else {
+				layer.msg(response.message?response.message:'上传失败', {icon: 5});
+			}
+			
+		})
+
+	}
+</script>

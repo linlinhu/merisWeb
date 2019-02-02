@@ -1,0 +1,251 @@
+<#setting datetime_format='yyyy-MM-dd HH:mm:ss'>
+<#setting date_format='yyyy-MM-dd'>
+<div class="wrapper-content">
+	<div class="row">
+		<div class="col-sm-12">
+		    <div class="ibox float-e-margins">
+		        <div class="ibox-title">
+		            <h5>车辆管理</h5>
+		            <div class="ibox-tools">
+		                <a class="btn btn-primary" href="javascript: editDriver('idPrefix', {})" alt="添加司机" title="添加司机">
+		                    <i class="fa fa-plus"></i>
+		                </a>
+		            </div>
+		        </div>
+		        <div class="ibox-content">
+		        	<div class="filter-line">
+	                	<form method="get" class="dr-search-form" id="logisticTruckSearchForm">
+							<input type="hidden" name="page">
+							<select class="form-control" name="lcId" role="user-params">
+								<option value="">全部</option>
+								<#if LCList?? && LCList?size gt 0>
+								<#list LCList as lc>
+									<option value="${lc.id}"
+									<#if lc.id == lcId>
+										selected
+									</#if>
+									>${lc.name}</option>
+								</#list>
+								</#if>
+							</select>
+                            <input placeholder="车牌号查询" class="form-control" type="text" name="keyword" value="${keyword!''}" role="user-params">
+                            <button type="button" class="btn btn-primary" role="submit"><i class="fa fa-search"></i></button>
+                            <button type="button" class="btn btn-default" role="reset"><i class="fa fa-refresh"></i></button>
+	                 	</form>
+	                </div>
+		            <table class="footable table table-stripped toggle-arrow-tiny" id="logisticTruckTable" data-page-size="${page.limit!10}" data-paging="false">
+		                <thead>
+		                        <tr>
+		                        	<th>序号</th>
+		                        	<th>车牌号</th>
+		                        	<th>首选司机</th>
+		                            <th>物流公司</th>
+		                            <th data-sort-ignore="true">操作</th>
+		                        </tr>
+		                    </thead>
+		                    <tbody>
+		                    	<#if page?? &&  page.totalCount gt 0 >
+		                    	<#list page.resultList as d>
+		                    		<tr>
+		                    			<td>${(page.currentPage -1) * page.limit + d_index + 1 }</td>
+		                    			<td>${d.carNo}</td>
+		                    			<td>${d.truckDriver.driverName} ${d.truckDriver.driverMobile}</td>
+		                    			<td>${d.lcName}</td>
+			                        	<td>
+		                                    <a href="javascript: editDriver('idPrefix',{id:'${d.id}',driverId:'${d.truckDriver.id}',driverName:'${d.truckDriver.driverName}',driverMobile:'${d.truckDriver.driverMobile}',logisticsCompanyId:'${d.logisticsCompanyId}',carNo:'${d.carNo}'})" alt="编辑" title="编辑"><i class="fa fa-pencil text-navy">&nbsp;</i></a>&nbsp;
+			                        		<a href="javascript: remove('${d.carNo}', 'logisticTruck');" class="ipc-remove" alt="删除" title="删除"><i class="fa fa-trash text-navy" ></i></a>
+			                        	</td>
+		                        	</tr>
+		                        </#list>
+		                        <#else>
+		                        <tr>
+		                        	<td colspan="7">暂无数据</td>
+		                        </tr>
+		                        </#if>
+		                    </tbody>
+		            </table>
+		            <div class="text-right" id="logisticTruckPage"></div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$('.footable').footable(); // 初始化footable
+	<#if page??>
+	initTable({
+		modelName: 'logisticTruck',
+		curr: '${page.currentPage!1}',
+		totalPage: '${page.totalPageNum!1}',
+		totalCount: '${page.totalCount!1}',
+		limit: '${page.limit!10}'
+	});
+	</#if>
+	//显示编辑或新增车辆的弹框
+	function editDriver(idPrefix, option){
+		var companyResult = {
+				logisticsCompanyId: option.logisticsCompanyId?option.logisticsCompanyId:null
+			},
+			driverResult = {
+				tdId:option.tdId?option.tdId:null
+			},
+			companyTpl = companySelcetPanelDatas.innerHTML,//数据模板
+			companyView = null,
+			driverTpl = driverSelcetPanelDatas.innerHTML,
+			driverView = null;
+	
+		layuiPanel = layer.open({
+			type: 1,
+			skin : 'layui-layer-rim', //加上边框
+			title : option.id ? '编辑车辆信息' : '添加车辆',
+			area : [ '48%', '420px' ], //宽高
+			shadeClose: false, //开启遮罩关闭
+			content: '<div class="wrapper-content" id="' + idPrefix + 'Chosen">' + $('#truckEdit').html() + '</div>'
+		});
+		companyView = $('#' + idPrefix + 'Chosen #truck-companySelcetPanel-view');
+		driverView = $('#' + idPrefix + 'Chosen #truck-driverSelcetPanel-view');
+		findAllLCAndDriver({lcId:companyResult.logisticsCompanyId},function(data){ 
+			companyResult.LCList = data.LCList;
+			driverResult.result = data.driverList;
+			if(option && option.driverId) {
+				driverResult.result.unshift({
+					id:option.driverId,
+					driverName:option.driverName,
+					driverMobile:option.driverMobile
+				})
+			}
+			laytpl(companyTpl).render(companyResult, function(html){
+				companyView.html(html);
+			});
+			laytpl(driverTpl).render(driverResult, function(html){
+				driverView.html(html);
+			});
+		});
+		
+		$('#idPrefixChosen #truck-companySelcetPanel-view').on('change',function(){
+			findAllDriver()
+		})
+		
+		//查询指定物流公司对应的司机
+		function findAllDriver(){
+			var driverOption = {
+					url:'${base}logisticTruck/findAllDriver',
+					type:'GET'
+				},
+				value = $('#idPrefixChosen #truck-companySelcetPanel-view').val();
+			
+			driverOption.data = {
+					lcId:value
+			};
+			console.log('value',value)
+			ajaxRequest(driverOption, function(result){
+				if((typeof result) == 'string') {
+					result = JSON.parse(result);
+				}
+				if(result.success){
+					if(value == companyResult.logisticsCompanyId) {
+						if(option && option.driverId) {
+							result.result.unshift({
+								id:option.driverId,
+								driverName:option.driverName,
+								driverMobile:option.driverMobile
+							})
+						}
+					}
+					laytpl(driverTpl).render(result, function(html){
+						driverView.html(html);
+					});
+					
+				} else {
+					layer.msg(result.message?'获取数据失败，原因是'+result.message:'获取数据失败',{icon: 5});
+				}	
+			})
+			
+		}
+		
+		$('#'+ idPrefix +'Chosen form').validate({
+		    rules: {
+		    	carNo: {
+		            required: true,
+		            licenseTag: true
+		        },
+		        tdId: {
+		            required: true
+		        },
+		        logisticsCompanyId: {
+		        	required: true
+		        }
+		    },
+		    messages: {
+		    	carNo: {
+		            required: icon + "请输入车牌号",
+		            licenseTag:icon + "请输入有效的车牌号"
+		        },
+		        tdId: {
+		            required: icon + "请选择司机"
+		        },
+		        logisticsCompanyId:{
+		        	required: icon + "请选择物流公司"
+		        }
+		    },
+		    submitHandler:function(form){
+		    	var submitObj =$('#'+ idPrefix +'Chosen form').serializeObject();
+		    	saveTruck({jsonStr: JSON.stringify(submitObj)})
+		    } 
+		});
+		console.log('option.carNo',option.carNo)
+		if(option && option.id) {
+			$('#'+ idPrefix +'Chosen input[name="id"]').val(option.id);
+			$('#'+ idPrefix +'Chosen input[name="carNo"]').val(option.carNo);
+			
+		}
+	}
+	//查询所有的物流公司和指定物流公司对应的司机
+	function findAllLCAndDriver(data,callback){
+		var option = {
+				url:'${base}logisticTruck/findAllLCAndDriver',
+				type:'GET',
+				data:data
+			};
+		
+		ajaxRequest(option, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success){
+				console.log('result-----',result)
+				callback(result)
+			} else {
+				layer.msg(result.message?'获取数据失败，原因是'+result.message:'获取数据失败',{icon: 5});
+			}	
+		})
+		
+	}
+	//保存或者编辑司机
+	function saveTruck(str){
+		var option = {
+				url: '${base}logisticTruck/saveLogisticTruck',
+				data: str,
+				type: 'GET'
+			};
+		console.log('str',str)
+		ajaxRequest(option, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success){
+				layer.closeAll();
+				goPage('index');
+				
+			} else {
+				layer.msg(result.message?'保存失败，原因是'+result.message:'保存失败',{icon: 5});
+			}	
+		})
+	}
+	jQuery.validator.addMethod("isName", function(value, element) {       
+	    return this.optional(element) || /^[\u4E00-\u9FA5A-Za-z0-9]+[ ]{0,}[\u4E00-\u9FA5A-Za-z0-9]+$/.test(value);       
+	}, "不符合规则");
+	jQuery.validator.addMethod("licenseTag", function(value, element) {       
+	    return this.optional(element) || /^[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领A-Z]{1}[A-Z]{1}[ ]?[A-Z0-9]{4}[A-Z0-9挂学警港澳]{1}$/.test(value);       
+	}, "不符合规则");
+</script>

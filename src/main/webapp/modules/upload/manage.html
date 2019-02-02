@@ -1,0 +1,71 @@
+   <div class="wrapper-content">
+	    <div class="row">
+	        <div class="col-sm-12">
+	            <div class="ibox float-e-margins">
+	                <div class="ibox-title">
+	                    <h5>
+	                    	图片上传
+	                    </h5>
+	                    <div class="ibox-tools">
+	                        <a class="btn btn-white btn-bitbucket btn-xs" href="javascript: goPage('index?limit=8')">
+	                            <i class="fa fa-times"></i>
+	                        </a>
+	                    </div>
+	                </div>
+	                <div class="ibox-content">
+	                	<button onclick="uploadShow()">点击显示上传弹窗</button>
+	                	
+	                	<div class="webuploader" id="danicaUploader1"></div>
+	            	</div>
+				</div>
+	        </div>
+	    </div>
+	</div>
+    <script>
+    //页面嵌入调用
+    $('#danicaUploader1').html($('#webuploaderTPL').html());
+    CUploadFiles({
+		uploaderId: 'danicaUploader1',
+		filesType: ['img'],
+		uploadUrl: '/file/upload.do',
+		fileNumLimit: 3,
+		picList: ['https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1509447992671&di=2a573b62c2a471def365695ba863f563&imgtype=0&src=http%3A%2F%2Fimgcdn.guoku.com%2Fimages%2Fa75f33137b804c8ee6cc4626b9b29e5b.jpg',
+				 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1509447992671&di=41f7535e816e3575eac7e1644c7fda8e&imgtype=0&src=http%3A%2F%2Fwww.itwcom.cn%2Fuploads%2Fallimg%2F150526%2F1-15052609442J93.jpg',
+						 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1509447992671&di=41f7535e816e3575eac7e1644c7fda8e&imgtype=0&src=http%3A%2F%2Fwww.itwcom.cn%2Fuploads%2Fallimg%2F150526%2F1-15052609442J93.jpg']
+	}, function(file, response){
+		console.dir(file);
+		console.log('上传成功后的文件地址，',response.urls)
+	})
+	
+	//弹窗调用
+    function uploadShow(){
+    	var html =  '<div id="uploadInterface" style="z-index:999;">'+
+       					'<div class="webuploader" id="danicaUploader">'+
+       					$('#webuploaderTPL').html() +
+					    '</div>'+
+					'</div>';
+    	layer.open({
+    		type : 1,
+    		title : '请选择要上传的图片',
+    		skin : 'layui-layer-rim', //加上边框
+    		area : [ '60%', '450px' ], //宽高
+    		content : '<div class="wrapper-content">' + html + '</div>',
+    		btn : [ '确定'],
+			yes : function(lindex, layero) {
+				alert('123');
+			}
+    	});
+    	
+    	
+    	CUploadFiles({
+    		uploaderId: 'danicaUploader',
+    		filesType: ['excel', 'img'],
+    		uploadUrl: '/file/upload.do',
+    		fileNumLimit: 3
+    	}, function(file, response){
+    		console.dir(file);
+    	})
+    }
+    
+    
+    </script>

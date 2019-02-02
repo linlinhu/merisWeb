@@ -1,0 +1,473 @@
+<div class="ibox float-e-margins" style="position: relative">
+	<div class="ztree-wrap" id="prdCateTreeWrap">
+		<input class="search" id="pcTreeKey" placeholder="类名模糊查询">
+		<ul id="pcTree" class="ztree"></ul>
+	</div>
+	<div class="ibox-title" style="border: 0;padding: 0 20px;min-height: 38px;">
+		<h5>
+			<a href="javascript:void(0)"
+				id="prdCateTreeFilter" style="padding: 5px 0"> <span>全部分类</span>
+				&nbsp;<i class="fa fa-sort"></i>
+			</a>
+		</h5>
+		<div class="ibox-tools">
+			<a class="btn btn-primary" href="javascript:goPage('form')"
+				alt="添加产品" title="添加产品"> <i class="fa fa-plus"></i>
+			</a>
+			<span class="btn btn-primary" id="productSearchToggle" onclick="toggleProductSearchForm(this)" title="搜索">
+                <i class="fa fa-search-minus"></i>
+            </span>
+		</div>
+	</div>
+	<div class="ibox-content">
+		<form method="get" id="productSearchForm" style="margin-top: -15px;">
+			<div class="filter-line" style="padding: 10px 0 6px">
+				<input type="hidden" name="page"> <input type="hidden"
+					name="category" value='${category!""}'> <input
+					type="hidden" name="tags" value='${tags!""}'> <input
+					placeholder="产品名称模糊查询" class="form-control" type="text" name="name"
+					value="${name!''}" role="user-params"> <input
+					placeholder="产品编号模糊查询" class="form-control" type="text" name="sn"
+					value="${sn!''}" role="user-params">
+				<button type="button" class="btn btn-primary" role="submit">
+					<i class="fa fa-search"></i>
+				</button>
+				<button type="button" class="btn btn-default" role="reset">
+					<i class="fa fa-refresh"></i>
+				</button>
+			</div>
+			<div class="conditions-row">
+				<div class="_t">标签筛选</div>
+				<div class="_c" id="hotTags-view"></div>
+				<script id="hotTagsDatas" type="text/html">
+		 					{{# if(d.length > 0) { }}
+								{{# layui.each(d, function(index, item){ }}
+		                		<a class="label {{item.check == true ? 'label-success': ''}}" data-id="{{item.id}}" onclick="prdTagClick(this)">{{item.name}}</a>
+								{{# }); }}
+		                		<a class="label label-warning" id="changeHotTags" onclick="getHotTags()"><i class="fa fa-refresh">&nbsp;换一批</i></a>
+							{{# } else { }}
+								-
+							{{# }}}
+		                	</script>
+			</div>
+		</form>
+		<table class="footable table table-stripped toggle-arrow-tiny"
+			id=productTable data-page-size="${pageResult.limit!10}"
+			data-paging="false">
+			<thead>
+				<tr>
+					<th data-toggle="true" style="width: 80px">序号</th>
+					<th>产品名称</th>
+					<th>产品编号</th>
+					<th style="width: 120px">分类</th>
+					<th style="width: 120px">品牌</th>
+					<th style="width: 160px" data-sort-ignore="true">产品图片</th>
+					<th>标签</th>
+					<th data-hide="all">特性</th>
+					<th data-hide="all">包装规格</th>
+					<th data-hide="all">描述</th>
+					<th style="width: 70px" data-sort-ignore="true">操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				<#if pageResult?? && pageResult.totalCount gt 0 > <#list
+				pageResult.resultList as d>
+				<tr>
+					<td>${(pageResult.currentPage?if_exists - 1) *
+						pageResult.limit + (d_index?if_exists + 1)}</td>
+					<td>${d.name!'-'}</td>
+					<td>${d.sn!'-'}</td>
+					<td><#if d.prdCategories?? && d.prdCategories?size gt 0>
+						<#list d.prdCategories as pc> <span class="lst-label-2">${pc.name}</span>
+						</#list> <#else> - </#if>
+					</td>
+					<td><#if d.brand??> ${d.brand.name} <#else> - </#if></td>
+					<td class="prd-pic-list-wrap" style="position: relative">
+						<#assign picUrls = ""> <#if d.pictures?? && d.pictures?size gt 0 >
+						<div class="carousel slide"
+							id="carousel${item_index?if_exists + 1}">
+							<div class="carousel-inner">
+								<#list d.pictures as p> <#if p_index == 0>
+								<div class="item active">
+									<#else>
+									<div class="item">
+										</#if> <#assign picUrls = '${picUrls}' + '${p.url};'> <img
+											alt="image" class="img-responsive" src="${p.url}"
+											alt="${p.url}" title="${p.url}"
+											onerror="this.src='img/nopic.png'">
+									</div>
+									</#list>
+								</div>
+								<a data-slide="prev"
+									href="manage.html#carousel${item_index?if_exists + 1}"
+									class="left carousel-control"> <span class="icon-prev"></span>
+								</a> <a data-slide="next"
+									href="manage.html#carousel${item_index?if_exists + 1}"
+									class="right carousel-control"> <span class="icon-next"></span>
+								</a>
+							</div>
+							</#if> <#if !d.pictures?? || d.pictures?size lt 6> <a
+								href="javascript: uploadPrdPics('${d.id}','${picUrls}')"><i
+								class="fa fa-plus"></i></a> </#if>
+					</td>
+					<td><#if d.tags??> <#list d.tags as t> <span class="lst-label">${t.tagName}</span>
+						</#list> <#else> - </#if>
+					</td>
+					<td><#if d.tpls?? && d.tpls?size gt 0> <#list d.tpls as pft>
+						<#if pft.type == 1 >
+						<div class="mgt10">
+							<#assign settingId = "featureSettingLabels" + d_index + pft.type
+							+ pft.id> <input id="${settingId}" type="hidden"
+								value='{"prdFeatureTemplateId":"${pft.id}","prdFeatureTemplateName":"${pft.name}","productId": "${d.id}","type":"1"}'>
+							<span>${pft.name}</span>&nbsp;<a
+								href="javascript:void(0)"
+								onclick="layerSettingFeature('${settingId}')"><i
+								class="fa fa-cog text-navy"></i></a>: <#if d.prdFeatures?? &&
+							d.prdFeatures?size gt 0> <#list d.prdFeatures as pf> <#if
+							pf.prdFeatureTemplateId?? && pf.prdFeatureTemplateId == pft.id &&
+							pf.value?length gt 0> <span class="lst-label-1">${pf.value}</span>
+							<input class="${settingId}" type="hidden"
+								value='{"id":"${pf.id}","name":"${pf.value}"}'> </#if>
+							</#list> </#if>
+						</div> </#if> </#list> <#else> - </#if>
+					</td>
+					<td><#if d.tpls?? && d.tpls?size gt 0> <#list d.tpls as pft>
+						<#if pft.type == 2 >
+						<div class="mgt10">
+							<#assign settingId = "featureSettingLabels" + d_index + pft.type
+							+ pft.id> <input id="${settingId}" type="hidden"
+								value='{"prdFeatureTemplateId":"${pft.id}","prdFeatureTemplateName":"${pft.name}","productId": "${d.id}","type":"2"}'>
+							<span>${pft.name}</span>&nbsp;<a
+								href="javascript:void(0)"
+								onclick="layerSettingFeature('${settingId}')"><i
+								class="fa fa-cog text-navy"></i></a>: <#if d.prdFeatures?? &&
+							d.prdFeatures?size gt 0> <#list d.prdFeatures as pf> <#if
+							pf.prdFeatureTemplateId?? && pf.prdFeatureTemplateId == pft.id &&
+							pf.value?length gt 0> <span class="lst-label-1">${pf.value}</span>
+							<input class="${settingId}" type="hidden"
+								value='{"id":"${pf.id}","name":"${pf.value}"}'> </#if>
+							</#list> </#if>
+						</div> </#if> </#list> <#else> - </#if>
+					</td>
+					<td>${d.describe!'-'}</td>
+					<td><a href="javascript: goPage('form?id=${d.id}')" alt="编辑"
+						title="编辑"><i class="fa fa-pencil text-navy">&nbsp;</i></a>&nbsp;
+						<a href="javascript: remove('${d.id}','product')" alt="删除"
+						title="删除"><i class="fa fa-trash text-navy">&nbsp;</i></a>&nbsp;</td>
+				</tr>
+				</#list> <#else>
+				<tr>
+					<td colspan="8">暂无数据</td>
+				</tr>
+				</#if>
+
+			</tbody>
+		</table>
+		<div class="text-right" id="productPage"></div>
+	</div>
+</div>
+
+
+<script type="text/javascript">
+//产品所属分类筛选条件赋值
+<#if categoryObj??>
+	$('#prdCateTreeFilter span').html('${categoryObj.name}');
+</#if>
+//热门标签分页参数，热门标签选中id串
+var htPage = 1, 
+	tagPage = 1,
+	selectedObjsStr = '';
+	
+	
+<#if tagsObj??>
+	htPage = '${tagsObj.page}';
+	selectedObjsStr = '${tagsObj.objs}';
+</#if>
+
+// 分页查询热门条件，传递选中标签id到后台设置选中属性
+getHotTags();
+// 加载热门标签函数
+function getHotTags() {
+	var hotTagsTpl =hotTagsDatas.innerHTML,//数据模板
+		hotTagsView = $('#hotTags-view');
+	
+	ajaxRequest({
+		url: basePath + 'prdTag/getHot',
+		data: {
+			page: htPage,
+			limit: 15,
+			selectedObjsStr: selectedObjsStr
+		}
+	}, function(data) {
+		if (!data.success) {
+			layer.msg(data.message ? data.message : '加载热门标签失败！', {icon: 5});
+		} else {
+			if (data.totalPageNum <= htPage) {
+				htPage = 1;
+			} else {
+				htPage = data.currentPage + 1;
+			}
+			tagPage = data.currentPage;
+			
+			laytpl(hotTagsTpl).render(data.resultList, function(html){
+				hotTagsView.html(html);
+
+				if (data.totalPageNum <= 1) {
+					$('#changeHotTags').hide();
+				} else {
+					$('#changeHotTags').show();
+				}
+			});
+		}
+	})
+}
+
+<#if pageResult?? >
+var name = '${name!''}',
+	sn = '${sn!''}';
+
+//初始化产品列表
+initTable({
+	modelName: 'product',
+	curr: '${pageResult.currentPage!1}',
+	totalPage: '${pageResult.totalPageNum!1}',
+	totalCount: '${pageResult.totalCount!1}',
+	limit: '${pageResult.limit!10}'
+});
+</#if>	
+
+// 初始化分类树
+initPrdCateTree();
+function initPrdCateTree() {
+	treeDisplay('prdCateTree');
+	eminZtree({
+		id: 'pcTree',
+		async: {
+			url : '${base}prdCategory/tree',
+			expandAll: true
+		}
+	},function(ztree, treeNode){
+		var categoryName = concatNodeName(ztree, treeNode, treeNode.name);
+		$('#prdCateTreeFilter span').html(categoryName);
+		$('#productSearchForm input[name="category"]').val(JSON.stringify({
+			id: treeNode.id,
+			name: categoryName
+		}));
+		pageSearch('product');
+	});
+}
+
+
+/**
+ * 标签点击时间
+ */
+function prdTagClick(tag) {
+	toggeLabelCheck(tag);
+	$('#productSearchForm input[name="tags"]').val(JSON.stringify({
+		page: tagPage,
+		objs: JSON.stringify(getLabelsSelected($(tag).parent()))
+	}));
+	pageSearch('product');
+}
+/**
+ * 切换产品筛选界面的显示和隐藏
+ */
+function toggleProductSearchForm(self) {
+	if ($(self).hasClass('btn-default')) {
+		$(self).attr('alt', "展开搜索界面");
+		$(self).attr('title', "展开搜索界面");
+		$(self).removeClass('btn-default').addClass('btn-primary');
+		$(self).find('i.fa').removeClass('fa-search-plus').addClass('fa-search-minus');
+		$('#productSearchForm').removeClass('hide');
+	} else {
+		$(self).attr('alt', "折叠搜索界面");
+		$(self).attr('title', "折叠搜索界面");
+		$(self).removeClass('btn-primary').addClass('btn-default');
+		$(self).find('i.fa').removeClass('fa-search-minus').addClass('fa-search-plus');
+		$('#productSearchForm').addClass('hide');
+	}
+	
+}
+var fileNumLimit = 6,picAdsArray = [];
+// 产品图片上传管理界面
+function uploadPrdPics(pid, logo) {
+	var html =  '<div id="uploadInterface" style="z-index:999;">'+
+						'<div class="webuploader" id="prdPicUpload">'+
+						$('#webuploaderTPL').html() +
+				    '</div>'+
+				'</div>';
+		
+	picAdsArray = 	logo.length > 0 ? logo.substring(0, logo.length-1).split(';') : [];
+		
+	layer.open({
+		type : 1,
+		title : '请选择要上传的图片',
+		skin : 'layui-layer-rim', //加上边框
+		area : [ '60%', '450px' ], //宽高
+		content : '<div class="wrapper-content">' + html + '</div>',
+		btn : [ '确定'],
+		yes : function(lindex, layero) {
+			var pics = [];
+			if (picAdsArray.length > fileNumLimit) {
+				layer.msg('文件上传个数超出限制,无法保存！');
+				return false;
+			}
+			
+			for (i = 0; i < picAdsArray.length; i++) {
+				pics.push({
+					productId: pid,
+					url: picAdsArray[i],
+					type: i == 0 ? 1 : 0
+				})
+			}
+			
+			
+			if (pics.length == 0) {
+				layer.confirm("您为上传任何图片信息，是否允许当前产品不关联任何图片信息？", {
+					icon: 3,
+					btn: ['允许','取消'] //按钮
+				}, function() {
+					savePics(JSON.stringify(pics), lindex);
+				})
+			} else {
+				savePics(JSON.stringify(pics), lindex);
+			}
+			
+			
+			
+		}
+	});
+	
+	loadPrdPicUoloader();
+}
+	
+function loadPrdPicUoloader() {
+	//文件上传器生成
+	CUploadFiles({
+		uploaderId: 'prdPicUpload',
+		filesType: ['img'],
+		uploadUrl: '/file/upload.do',
+		fileNumLimit: fileNumLimit,
+		picList: picAdsArray
+	}, function(file, response) {
+		if (!response.success) {
+			layer.msg('文件上传失败' + (response.message ? ('失败的原因可能是：' + response.message) : ''));
+			loadPrdPicUoloader();
+		} else {
+			picAdsArray.push(response.result.storage[2].fileStorageUrl);//新增
+		}
+	}, function(fileName) {
+		picAdsArray.splice(picAdsArray.indexOf(fileName), 1);//删除
+	})
+}
+/**
+ * 保存图片关联
+ */
+function savePics(pics, lindex) {
+	ajaxRequest({
+		url: basePath + 'product/savePics',
+		data: {
+			pics: pics
+		}
+	}, function(data) {
+		if (!data.success) {
+			layer.msg('保存图片信息失败!' + (data.message ? '原因可能是：' + data.message : ''), {icon: 5});
+		} else {
+			goPage('index');
+			layer.close(lindex);
+		}
+	});
+}
+
+/**
+ * 弹窗设置特性管理界面
+ */
+function layerSettingFeature(settingId) {
+	var commonObj = JSON.parse($('#' + settingId).val()),
+		classEls = $('.' + settingId),
+		featureVals = [],
+		labelGenerateId = settingId + 'LayerOpen';
+	
+	if (classEls.length > 0) {
+		for (i = 0; i < classEls.length; i++) {
+			featureVals.push(JSON.parse($(classEls[i]).val()));
+		}
+	}
+	
+	layer.open({
+		type : 1,
+		title : '【' + commonObj.prdFeatureTemplateName + '】-特性设置',
+		skin : 'layui-layer-rim', //加上边框
+		area : [ '50%', '300px' ], //宽高
+		content : '<div class="labels" id="' + labelGenerateId + '" style="margin:15px;"></div>',
+		btn : [ '确定'],
+		yes : function(lindex, layero) {
+			if (featureVals.length == 0) {
+		   		layer.confirm('你还没有设置任何特性，确认放弃？', {
+					icon: 3,
+					btn: ['确认','取消'] //按钮
+		    	}, function(confirmIndex){
+		    		featureVals = [];
+		    		featureVals.push({
+		    			type: commonObj.type,
+		    			prdFeatureTemplateId: commonObj.prdFeatureTemplateId,
+		    			prdFeatureTemplateName: commonObj.prdFeatureTemplateName,
+		    			productId: commonObj.productId,
+		    			id: '',
+		    			value: ''
+		    		});
+					savePfs(featureVals, function() {
+			    	  	layer.close(confirmIndex);
+			    	  	layer.close(lindex);
+						goPage('index');
+					})
+		    	});
+			} else {
+				for (i = 0; i < featureVals.length; i++) {
+					featureVals[i].type = commonObj.type;
+					featureVals[i].prdFeatureTemplateId = commonObj.prdFeatureTemplateId;
+					featureVals[i].prdFeatureTemplateName = commonObj.prdFeatureTemplateName;
+					featureVals[i].productId = commonObj.productId;
+					featureVals[i].value = featureVals[i].name;
+					delete featureVals[i]['name'];
+				}
+				savePfs(featureVals, function() {
+					layer.close(lindex);
+					goPage('index');
+				})
+				
+			}
+		}
+	});
+	
+	setTimeout(function() {
+		Labels({
+			id: labelGenerateId,
+			min: 3,
+			max: 10,
+			valLen: 10,
+			vals: featureVals
+		},function(labels, labelId, cur){
+			console.dir(cur);
+			featureVals = labels;
+		});
+	})
+	
+}
+
+function savePfs(featureVals, callback) {
+	ajaxRequest({
+		url: 'product/savePfs',
+		data: {
+			pfStr: JSON.stringify(featureVals)
+		}
+	}, function(data) {
+		if (!data.success){
+			  layer.msg(data.message ? data.message : '特性设置失败！', {icon: 5});
+		} else {
+			layer.msg('特性设置成功！', {icon: 6});
+			callback();
+		}
+	});
+}
+</script>

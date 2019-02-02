@@ -1,0 +1,199 @@
+<#setting datetime_format='yyyy-MM-dd HH:mm:ss'>
+<#setting date_format='yyyy-MM-dd'>
+<div class="wrapper-content">
+	<div class="row">
+		<div class="col-sm-12">
+		    <div class="ibox float-e-margins">
+		        <div class="ibox-title">
+		            <h5>司机管理</h5>
+		            <div class="ibox-tools">
+		                <a class="btn btn-primary" href="javascript: editDriver('idPrefix', {})" alt="添加司机" title="添加司机">
+		                    <i class="fa fa-plus"></i>
+		                </a>
+		            </div>
+		        </div>
+		        <div class="ibox-content">
+		        	<div class="filter-line">
+	                	<form method="get" class="dr-search-form" id="logisticDriverSearchForm">
+							<input type="hidden" name="page">
+							<select class="form-control" name="lcId" role="user-params">
+								<option value="">全部</option>
+								<#if LCList?? && LCList?size gt 0>
+								<#list LCList as lc>
+									<option value="${lc.id}"
+									<#if lc.id == lcId>
+										selected
+									</#if>
+									>${lc.name}</option>
+								</#list>
+								</#if>
+							</select>
+                            <input placeholder="司机姓名、手机号查询" class="form-control" type="text" name="keyword" value="${keyword!''}" role="user-params">
+                            <button type="button" class="btn btn-primary" role="submit"><i class="fa fa-search"></i></button>
+                            <button type="button" class="btn btn-default" role="reset"><i class="fa fa-refresh"></i></button>
+	                 	</form>
+	                </div>
+		            <table class="footable table table-stripped toggle-arrow-tiny" id="logisticDriverTable"  data-page-size="${page.limit!10}" data-paging="false">
+		                <thead>
+		                        <tr>
+		                        	<th>序号</th>
+		                        	<th>司机姓名</th>
+		                        	<th>手机号码</th>
+		                            <th>物流公司</th>
+		                            <th data-sort-ignore="true">操作</th>
+		                        </tr>
+		                    </thead>
+		                    <tbody>
+		                    	<#if page?? &&  page.totalCount gt 0 >
+		                    	<#list page.resultList as d>
+		                    		<tr>
+		                    			<td>${(page.currentPage -1) * page.limit + d_index + 1 }</td>
+		                    			<td>${d.driverName}</td>
+		                    			<td>${d.driverMobile}</td>
+		                    			<td>${d.lcName}</td>
+			                        	<td>
+		                                    <a href="javascript: editDriver('idPrefix',{id:'${d.id}',driverName:'${d.driverName}',driverMobile:'${d.driverMobile}',logisticsCompanyId:'${d.logisticsCompanyId}'})" alt="编辑" title="编辑"><i class="fa fa-pencil text-navy">&nbsp;</i></a>&nbsp;
+			                        		<a href="javascript: remove('${d.driverMobile}', 'logisticDriver');" class="ipc-remove" alt="删除" title="删除"><i class="fa fa-trash text-navy" ></i></a>
+			                        	</td>
+		                        	</tr>
+		                        </#list>
+		                        <#else>
+		                        <tr>
+		                        	<td colspan="7">暂无数据</td>
+		                        </tr>
+		                        </#if>
+		                    </tbody>
+		            </table>
+		            <div class="text-right" id="logisticDriverPage"></div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+		
+	$('.footable').footable(); // 初始化footable
+	<#if page??>
+	initTable({
+		modelName: 'logisticDriver',
+		curr: '${page.currentPage!1}',
+		totalPage: '${page.totalPageNum!1}',
+		totalCount: '${page.totalCount!1}',
+		limit: '${page.limit!10}'
+	});
+	</#if>
+	//显示编辑或新增司机的弹框
+	function editDriver(idPrefix, option){
+		var result = {
+				logisticsCompanyId: option.logisticsCompanyId?option.logisticsCompanyId:null
+			},
+			tpl = companySelcetPanelDatas.innerHTML,//数据模板
+			view = null;
+	
+		layuiPanel = layer.open({
+			type: 1,
+			skin : 'layui-layer-rim', //加上边框
+			title : option.id ? '编辑司机信息' : '添加司机',
+			area : [ '48%', '420px' ], //宽高
+			shadeClose: false, //开启遮罩关闭
+			content: '<div class="wrapper-content" id="' + idPrefix + 'Chosen" style="height:100px">' + $('#driverEdit').html() + '</div>'
+		});
+		getAllLC(function(data){ 
+			result.LCList = data;
+			view = $('#' + idPrefix + 'Chosen #companySelcetPanel-view');
+			
+			laytpl(tpl).render(result, function(html){
+				view.html(html);
+				if(option.id){
+					$('#' + idPrefix + 'Chosen select[name="logisticsCompanyId"]').attr('disabled','');
+				}
+			});
+		});
+		
+		$('#'+ idPrefix +'Chosen form').validate({
+		    rules: {
+		    	driverName: {
+		            required: true,
+		            rangelength: [2,20],
+		            isName: true
+		        },
+		        driverMobile: {
+		            required: true,
+		            isMobile: true
+		        },
+		        logisticsCompanyId: {
+		        	required: true
+		        }
+		    },
+		    messages: {
+		    	driverName: {
+		            required: icon + "请输入司机姓名",
+		            rangelength: icon + "司机姓名输入长度限制为2-20个合法字符",
+		            isName:icon + "允许输入中文、字母、数字、空格，且不能以空格开始或结尾"
+		        },
+		        driverMobile: {
+		            required: icon + "请输入手机号码",
+		            isMobile: icon + "请输入有效的手机号码"
+		        },
+		        logisticsCompanyId:{
+		        	required: icon + "请选择物流公司",
+		        }
+		    },
+		    submitHandler:function(form){
+		    	$('#' + idPrefix + 'Chosen select[name="logisticsCompanyId"]').removeAttr('disabled');
+		    	$('#' + idPrefix + 'Chosen select[name="logisticsCompanyId"]').css({'background':'#EEEEEE'});
+		    	
+		    	var submitObj =$('#'+ idPrefix +'Chosen form').serializeObject();
+		    	saveDriver({jsonStr: JSON.stringify(submitObj)})
+		    } 
+		});
+		if(option && option.id) {
+			$('#'+ idPrefix +'Chosen input[name="id"]').val(option.id);
+			$('#'+ idPrefix +'Chosen input[name="driverName"]').val(option.driverName);
+			$('#'+ idPrefix +'Chosen input[name="driverMobile"]').val(option.driverMobile);
+		}
+	}
+	
+	function getAllLC(callback){
+		var option = {
+				url:'${base}logisticDriver/findAllLC',
+				type:'GET'
+			};
+		
+		ajaxRequest(option, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success){
+				callback(result.result)
+			} else {
+				layer.msg(result.message?'获取数据失败，原因是'+result.message:'获取数据失败',{icon: 5});
+			}	
+		})
+		
+	}
+	//保存或者编辑司机
+	function saveDriver(str){
+		var option = {
+				url: '${base}logisticDriver/saveLogisticDriver',
+				data: str,
+				type: 'GET'
+			};
+		ajaxRequest(option, function(result){
+			if((typeof result) == 'string') {
+				result = JSON.parse(result);
+			}
+			if(result.success){
+				
+				layer.closeAll();
+				goPage('index');
+				
+			} else {
+				layer.msg(result.message?'保存失败，原因是'+result.message:'保存失败',{icon: 5});
+			}	
+		})
+	}
+	jQuery.validator.addMethod("isName", function(value, element) {       
+	    return this.optional(element) || /^[\u4E00-\u9FA5A-Za-z0-9]+[ ]{0,}[\u4E00-\u9FA5A-Za-z0-9]+$/.test(value);       
+	}, "不符合规则");
+</script>

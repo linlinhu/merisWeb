@@ -1,0 +1,86 @@
+<#setting datetime_format='yyyy-MM-dd HH:mm:ss'>
+<#setting date_format='yyyy-MM-dd'>
+<div class="wrapper-content">
+	<div class="row">
+		<div class="col-sm-12">
+		    <div class="ibox float-e-margins">
+		        <div class="ibox-title">
+		            <h5>物流公司管理</h5>
+		            <div class="ibox-tools">
+		                <a class="btn btn-primary" href="javascript: goPage('form')" alt="添加物流公司" title="添加物流公司">
+		                    <i class="fa fa-plus"></i>
+		                </a>
+		            </div>
+		        </div>
+		        <div class="ibox-content">
+		        	<div class="filter-line">
+	                	<form method="get" class="dr-search-form" id="logisticCompanySearchForm">
+							<input type="hidden" name="page" value="">
+                            <input placeholder="物流公司名称查询" class="form-control" type="text" name="keyword" value="${keyword!''}" role="user-params">
+                            <button type="button" class="btn btn-primary" role="submit"><i class="fa fa-search"></i></button>
+                            <button type="button" class="btn btn-default" role="reset"><i class="fa fa-refresh"></i></button>
+	                 	</form>
+	                </div>
+		            <table class="footable table table-stripped toggle-arrow-tiny" id="logisticCompanyTable" data-page-size="${page.limit!10}" data-paging="false">
+		                <thead>
+		                        <tr>
+		                        	<th style="width:100px">序号</th>
+		                        	<th style="width:200px">公司商标及名称</th>
+		                            <th>公司简介</th>
+		                            <th data-sort-ignore="true" style="width:150px">操作</th>
+		                        </tr>
+		                    </thead>
+		                    <tbody>
+		                    	<#if page?? &&  page.totalCount gt 0 >
+		                    	<#list page.resultList as d>
+		                    		<tr>
+		                    			<td>${(page.currentPage -1) * page.limit + d_index + 1 }</td>
+		                    			<td>
+				                        	<#if d.logoJson??>
+	                        					<img height="60" src="${d.logoJson.storage[1].fileStorageUrl}"  onerror="this.src='img/nopic.png'"/>
+	                        				<#else>
+	                        					<img height="60" src="img/nopic.png"/>
+	                        				</#if>
+	                        				<p>${d.name}</p>
+		                    			</td>
+		                    			<td>
+		                    			<#if d.describe?? && d.describe?length gt 0>
+		                    				${d.describe}
+		                    			<#else>
+		                    				-
+		                    			</#if>
+		                    			</td>
+			                        	<td>
+		                                    <a href="javascript: goModule({moduleName:'logisticDriver',lcId:'${d.id}'})" alt="查看司机" title="查看司机"><i class="fa fa-user text-navy">&nbsp;</i></a>&nbsp;
+		                                    <a href="javascript: goModule({moduleName:'logisticTruck',lcId:'${d.id}'})" alt="查看车辆" title="查看车辆"><i class="fa fa-bus text-navy">&nbsp;</i></a>&nbsp;
+		                                    <a href="javascript: goPage('form',{id:${d.id}})" alt="编辑" title="编辑"><i class="fa fa-pencil text-navy">&nbsp;</i></a>&nbsp;
+			                        		<a href="javascript: remove('${d.id}', 'logisticCompany');" class="ipc-remove" alt="删除" title="删除"><i class="fa fa-trash text-navy" ></i></a>
+			                        	</td>
+		                        	</tr>
+		                        </#list>
+		                        <#else>
+		                        <tr>
+		                        	<td colspan="7">暂无数据</td>
+		                        </tr>
+		                        </#if>
+		                    </tbody>
+		            </table>
+		            <div class="text-right" id="logisticCompanyPage"></div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+
+	$('.footable').footable(); // 初始化footable
+	<#if page??>
+	initTable({
+		modelName: 'logisticCompany',
+		curr: '${page.currentPage!1}',
+		totalPage: '${page.totalPageNum!1}',
+		totalCount: '${page.totalCount!1}',
+		limit: '${page.limit!10}'
+	});
+	</#if>
+</script>

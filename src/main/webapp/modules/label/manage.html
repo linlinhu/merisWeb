@@ -1,0 +1,263 @@
+   <style type="text/css">
+
+.words-split {
+	 vertical-align: bottom; 
+}
+.lbl-input {
+	display: inline-block;
+	width: 100px; 
+	height: 26px; 
+	line-height: 26px;
+	min-height: 26px;
+	text-indent: 10px;
+	border: 2px solid skyblue;
+	border-radius: 5px;
+	color:#000;
+	vertical-align: middle;
+}
+.words-split p{
+	position: relative;
+	display: inline-block;
+	height: 28px;
+	line-height: 28px;
+	font-size: 14px;
+	border-radius: 3px;
+	opacity: .9;
+	filter: alpha(opacity=90);
+	cursor:pointer;
+	margin-right:10px;
+}
+.words-split .item{
+	padding:0 12px 0 5px;
+	text-align: center;
+}
+.words-split .fm-button {
+	display: inline-block;
+	border:0;
+	outline:0;
+	position: relative;
+	margin:0 4px;
+	padding:0 3px 0 3px;
+}
+ .words-split em {
+	display:none;
+	width: 16px; 
+	line-height:100%;
+	position: absolute;
+	right: 2px;
+	top:7px;
+}
+.words-split p:hover em	{
+	display: inline-block;
+}
+a.words-split-add {
+	display: inline-block;
+	font-weight: blod;
+}
+
+</style>
+   <div class="wrapper-content">
+	    <div class="row">
+	        <div class="col-sm-12">
+	            <div class="ibox float-e-margins">
+	                <div class="ibox-title">
+	                    <h5>
+	                    	标签管理
+	                    </h5>
+	                    <div class="ibox-tools">
+	                        <a class="btn btn-white btn-bitbucket btn-xs" href="javascript: goPage('index?limit=8')">
+	                            <i class="fa fa-times"></i>
+	                        </a>
+	                    </div>
+	                </div>
+	                <div class="ibox-content">
+	                <form method="get" class="form-horizontal" id="personForm">	
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">标签</label>
+                            <div class="col-sm-10">
+								<div id="labelDemo2">labelDemo2</div>
+                            </div>
+                        </div>
+                    </form>
+	            	</div>
+				</div>
+	        </div>
+	    </div>
+	</div>
+<script type="text/javascript">
+var data = {
+		id: 'labelDemo2',
+		list: ['111','222','444','333'],
+		max: 4,
+		min: 2,
+		length: 10,
+		msg: '请输入字母数字下划线'
+	}
+labelFn(data,fn);
+
+/**
+ * 标签的显示、添加、删除
+ * @param {object}opt 参数对象 
+ * @param {object}callback 回调函数
+ * @param opt中的必传字段：id（标签容器id）
+ * @param opt中的可选字段：list(渲染数据),regexp(正则),style(允许background和color),length(标签长度),max(标签的最大个数),min(最小个数),msg(不符合规则时的提示信息)
+ */
+function labelFn (opt,callback){
+
+		var regexp = opt.regexp || /^\w{1,}$/,
+			el = $('#' + opt.id), 
+				list = opt.list ? opt.list : [],
+				holder = $('<span class="words-split"></span>'),
+				add = '',
+				number = opt.max ? opt.max : 7,
+				min = opt.min ? opt.min : 0,
+				len = opt.length ? opt.length : 7,
+				bg = '#2cac93',
+				color =  '#fff', 
+				isFirst = true,
+				temp,
+				
+			charge = function (){ //判断标签数量
+				if(list.length < min){
+					add.hide()
+				} else{
+					if (list.length < number) {
+						add.show();
+					}else{
+						add.hide()
+						if (!isFirst) {
+							layer.msg('标签个数达到上限',{icon:6, time:1500});
+						}
+						
+					}
+				}
+			},
+			
+			init = function (list) { //渲染标签
+				temp = [];
+				holder.html('');
+				
+				if (list.length < min) {
+					for(var i = 0; i < min; i++){
+						temp[i] = list[i] ? list[i] : "+添加特性";
+					}
+				} else {
+					temp = list;
+				}
+				
+				if(list.length < min){
+					for (var i = 0; i < list.length; i++) {
+						holder.append( $('<p style="color:'+ color +';background:'+ bg +'" id-data="'+ i +'" class="item"><span class="fm-button" >'+temp[i]+'</span><em class="fa fa-times"></em></p>') );
+					}
+					for (var i = list.length; i < temp.length; i++) {
+						holder.append( $('<p style="color:'+ color +';background:'+ bg +'" id-data="'+ i +'" class="item"><span class="fm-button" >'+temp[i]+'</span></p>') );
+					}
+				} else {
+					for (var i = 0; i < temp.length; i++) {
+						holder.append( $('<p style="color:'+ color +';background:'+ bg +'" id-data="'+ i +'" class="item"><span class="fm-button" >'+temp[i]+'</span><em class="fa fa-times"></em></p>') );
+					}
+				}
+				
+				
+				
+				el.hide().after( holder );
+				holder.after(add);
+				charge();
+			};
+			
+		if (opt.style && opt.style.background) {
+			bg = opt.style.background
+		}
+		
+		if (opt.style && opt.style.color) {
+			color = '#2cac93';
+		}
+		
+		add = $('<a class="words-split-add fa fa-plus" style="color:'+ bg +'"></a>');
+			
+		init(list);
+		
+		holder.on('click','p>em',function(){ //刪除
+			for(var i = 0; i < list.length; i++) {
+				if(list[i] == $(this).parent().text()){
+					list.splice(i,1);
+				}
+			}
+			init(list);
+		});
+		
+		add.on('click',function(){ //添加预处理
+			$(this).hide();
+			holder.append( $('<input class="lbl-input" maxlength="'+ len +'"/>') )
+			$('.lbl-input').focus()
+		});
+		
+		holder.on('click','.fm-button',function(){ //编辑
+			 var width = parseInt($(this).parent().css('width')) + 2 +'px';
+			
+			
+			 $(this).parent().removeClass('item');
+			 $(this).parent().css({'background':'transparent'})
+			$(this).parent().html('<input class="lbl-input" id="myId" contenteditable="true" maxlength="'+ len +'" style="width:auto"/>')
+			 $('.lbl-input').focus().val($(this).text());
+			 add.hide()
+		})
+		
+		holder.on('blur','.lbl-input',function(){ //验证添加字段
+			var t = $(this),
+				v = t.val()
+				index = t.parent().attr('id-data');
+		
+			isFirst = false;
+			if( regexp.test(v) ){
+				if(index && list[index]) {
+					
+					list[index] = v
+				} else {
+					list.push(v); 
+				}
+				init(list)
+				callback(list)
+			} else if (!v){
+				if(index) {
+					list.splice(index,1);
+					init(list);
+					callback(list)
+				} else{
+					t.remove();
+					add.show();
+				}
+			}else{
+				layer.msg(opt.msg?opt.msg:'输入不符合规则',{icon:5, time:1500});
+				$('.lbl-input').focus();
+			}
+		});
+		
+		holder.on('keydown','.lbl-input',function(e){
+			console.log($(this)[0].offsetWidth,$(this).width())
+			var textWidth = 10*$(this).val().length;
+			
+			if(textWidth+25 > $(this).width() || $(this).width() > 100) {
+				$(this).width(textWidth+25);
+			}
+			switch(e.keyCode){
+				case 13:
+				case 27: $(this).trigger('blur');
+				break;
+				case 32: return false;
+				break;
+			}
+		});
+		
+		
+		
+
+	}
+
+ function fn(data){
+	 console.log('啦啦啦啦',data)
+ }
+ 
+
+
+</script>

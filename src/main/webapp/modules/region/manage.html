@@ -1,0 +1,105 @@
+<style>
+#regionTree li span.node_name{
+	max-width:100%;
+}
+#regionTree a.action{
+	display:none;
+}
+#regionTree a[class*="level"]:hover a{
+	display:inline-block;
+}
+</style>
+<div class="wrapper-content">
+	<div class="row">
+		<div class="col-sm-12">
+		    <div class="ibox float-e-margins">
+		        <div class="ibox-title">
+		            <h5>区域管理</h5>
+		        </div>
+		        <div class="ibox-content">
+		        	<div class="row">
+	        			<div class="ztree-panel">
+							<input class="search" id="regionTreeKey" placeholder="类名模糊查询">
+							<ul id="regionTree" class="ztree"></ul>
+						</div>
+		        	</div>
+		        </div>
+		    </div>
+		</div>
+	</div>
+</div>
+
+<script>
+	var addDiyDom = function(treeId, treeNode) {
+		var aObj = $("#" + treeNode.tId + "_a");
+		if(treeNode.id != 1){
+			
+			var editStr = '<a href="javascript: regionEdit(\'\', \'' + treeNode.id + '\')" style="margin:0 0 0 5px;" alt="添加子线" title="添加子线" class="action"><i class="fa fa-plus"></i></a>' +
+						'<a href="javascript: regionEdit(\'' + treeNode.id + '\', \'' + treeNode.pid + '\',\'' + treeNode.name + '\')" style="margin:0 0 0 5px;" alt="编辑" title="编辑" class="action"><i class="fa fa-pencil"></i></a>' +
+						'<a href="javascript: removeRegion(\'' + treeNode.id + '\',' + treeNode.isParent + ' )" style="margin:0 0 0 5px;" alt="删除" title="删除" class="action"><i class="fa fa-trash"></i></a>';
+						
+		} else {
+			var editStr = '<a href="javascript: regionEdit(\'\', \'' + treeNode.id + '\')" style="margin:0 0 0 5px;" alt="添加子线" title="添加子线" class="action"><i class="fa fa-plus"></i></a>';
+	
+		}
+		aObj.append(editStr);
+	};
+	
+	eminZtree({
+		id: 'regionTree',
+		async: {
+			url : '${base}region/findByPid',
+			expandAll: true
+		},
+		diyDom: addDiyDom
+	},function(ztree, treeNode){
+		
+	});
+	
+	function regionEdit(id, pid, name) {
+		layer.prompt({
+			title: name ? '编辑区域' : '新增子区域',  
+			formType: 0
+		}, function(val, index){
+			var obj = {
+					id:id,
+					pid: pid,
+					name: val,
+					description: ''
+				}
+			save({jsonStr:JSON.stringify(obj)}, 'region')
+			layer.close(index);
+		});
+		
+		$('.layui-layer-input').focus().val( name ? name : '');
+		$('.layui-layer-input').attr('maxLength','50');
+		$('.layui-layer-input').attr('onkeydown',"prevent(' ')");
+		/*String.prototype.len=function(){
+		    return Math.ceil(this.replace (/[^\x00-\xff]/g,"rr").length);
+		}
+		$('.layui-layer-input').on('keydown',function(e){
+		    var k = e.keyCode;
+		    var len = $(this).val().len();
+		    console.log(k,len)
+		    if(len > 50){
+		        if( k >= 112 && k <= 123 || k <= 46 ){
+		        	
+		        } else {
+		        	console.log('应该阻止')
+		        	e.returnValue=false
+			        return false;
+		        }
+		        
+		    }
+		}) */
+	}
+	
+	function removeRegion(id, isParent) {
+		var confirmMsg = null;
+		if (isParent) {
+			confirmMsg = '删除该分类节点将同时删除它的子分类节点，是否继续？'
+		}
+		remove(id, 'region', confirmMsg);
+	}
+</script>
+

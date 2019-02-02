@@ -1,0 +1,211 @@
+<style>
+.pro-img,
+.img {
+	width:100px;
+	height:100px;
+}
+.img {
+	position:relative;
+}
+.img:hover span {
+	display:inline-block;
+}
+.img span {
+	display:none;
+	position:absolute;
+	top:0;
+	right:0;
+	
+	width:16px;
+	height:16px;
+	
+	border-radius:100%;
+	
+	line-height:16px;
+	text-align:center;
+	
+	background:#ccc;
+	color:white;
+	cursor: pointer;
+}
+.tips {
+	font-size:10px;
+}
+</style>
+<div class="wrapper-content">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <h5>
+                    	物流公司-
+                    <#if logisticCompany??>
+                    	编辑
+                    <#else>
+                    	添加
+                    </#if>
+                    </h5>
+                    <div class="ibox-tools">
+                        <a class="btn btn-white btn-bitbucket btn-xs" href="javascript: goPage('index?limit=8')">
+                            <i class="fa fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+               		 <form method="get" class="form-horizontal" id="logisticCompanyForm">
+               		 	<input type="hidden" name="id">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">物流公司名称</label>
+                            <div class="col-sm-10">
+								<input class="form-control" type="text" name="name">
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">物流公司商标</label>
+                            <div class="col-sm-10">
+                            	<div class="input">
+                            		<input class="form-control" type="text" name="logoJson" readOnly onclick="uploadlogisticCompanyImgResources()">
+                            		<p class="tips">建议上传长宽比例为1:1的图片</p>
+                            	</div>
+								<div class="img hide">
+									<img class="pro-img"/>
+									<span class="removeImg"><i class="fa fa-times"></i></span>
+								</div>
+                            </div> 
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+	                            <label class="col-sm-2 control-label">物流公司描述</label>
+	                            <div class="col-sm-10">
+									<textarea class="form-control" name="describe">${logisticCompany.describe!""}</textarea>
+	                            </div>                        	
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <div class="col-sm-4 col-sm-offset-2">
+                                <button class="btn btn-primary" type="submit">保存内容</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+<#if logisticCompany??>
+	$('#logisticCompanyForm input[name="id"]').val('${logisticCompany.id!""}');
+	$('#logisticCompanyForm input[name="name"]').val('${logisticCompany.name!""}');
+	<#if logisticCompany.logoJson?? && logisticCompany.logoJson.storage?? && logisticCompany.logoJson.storage?size gt 0>
+		$('.img img').attr('src','${logisticCompany.logoJson.storage[2].fileStorageUrl}')
+		$('div.img').removeClass('hide');
+		$('.input').addClass('hide');
+		var  temp = {
+			originalName:'${logisticCompany.logoJson.originalName}',
+			originalMimeType:'${logisticCompany.logoJson.originalMimeType}',
+			originalSize:'${logisticCompany.logoJson.originalName}',
+			originalContentType:'${logisticCompany.logoJson.originalContentType}',
+			storage:[]
+		}
+		<#list logisticCompany.logoJson.storage as d>
+		temp.storage.push({
+			imgQualityType:'${d.imgQualityType}',
+			fileStorageUrl:'${d.fileStorageUrl}',
+			available:'${d.available}',
+			destinationStorageHost:'${d.destinationStorageHost}',
+			fileId:'${d.fileId}'
+		})
+		</#list>
+		$('input[name="logoJson"]').val(JSON.stringify(temp));
+	</#if>
+</#if>
+$("#logisticCompanyForm").validate({
+	rules: {
+		name: {
+	        required: true,
+	        rangelength: [2,30],
+	        isName:true
+	    },
+	    describe:{
+	    	rangelength: [5,100]
+	    }
+	},
+	messages: {
+		name: {
+	        required: icon + "请输入物流公司名称",
+	        rangelength: icon + "物流公司名称的长度介于2-30之间",
+	        isName: icon + "不能以空格开始或结尾"
+	    },
+	    describe:{
+	    	rangelength: icon + "物流公司名称的长度介于5-100之间"
+	    }
+	},
+	submitHandler: function(){
+		var submitObj = $('#logisticCompanyForm').serializeObject();
+		if(submitObj.logoJson && submitObj.logoJson.length > 0) {
+			submitObj.logoJson = JSON.parse(submitObj.logoJson);
+		}
+		save({
+			jsonStr: JSON.stringify(submitObj)
+		}, 'logisticCompany')
+	}
+});
+
+
+$('.removeImg').on('click',function(){
+	$('div.img').addClass('hide');
+	$('.input').removeClass('hide');
+	$('input[name="logoJson"]').val('');
+})
+
+function uploadlogisticCompanyImgResources() {
+	var html =  '<div id="uploadInterface" style="z-index:999;">'+
+					'<div class="webuploader" id="logisticCompanyImgResourcesUploader">'+
+						$('#webuploaderTPL').html() +
+				    '</div>'+
+				'</div>',
+		uploadPics = [];	
+				
+	layer.open({
+		type : 1,
+		title : '上传图片资源',
+		skin : 'layui-layer-rim', //加上边框
+		area : [ '60%', '450px' ], //宽高
+		content : '<div class="wrapper-content">' + html + '</div>',
+		btn : [ '确定'],
+		yes : function(lindex, layero) {
+			if (uploadPics.length == 0) {
+				layer.msg('请上传张图片后再点击此按钮', {icon: 5});
+				return false;
+			} else {
+				layer.closeAll();
+			}
+			
+		}
+	});
+	
+	CUploadFiles({
+		uploaderId: 'logisticCompanyImgResourcesUploader',
+		filesType: ['img'],
+		uploadUrl: '/file/upload.do',
+		fileNumLimit: 1
+	}, function(file, response){
+		console.log('response',response)
+		if(response.success) {
+			uploadPics.push(response.result);
+			$('div.img').removeClass('hide');
+			$('.input').addClass('hide');
+			$('input[name="logoJson"]').val(JSON.stringify(response.result));
+			$('.img img').attr('src',response.result.storage[2].fileStorageUrl)
+		} else {
+			layer.msg(response.message?response.message:'上传图片失败', {icon: 5});
+		}
+		
+	})
+}
+
+jQuery.validator.addMethod("isName", function(value, element) {       
+    return this.optional(element) || /^\S.*\S$/.test(value);       
+}, "不能以空格开始或结尾");
+</script>

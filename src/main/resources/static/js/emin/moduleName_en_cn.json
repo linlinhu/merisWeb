@@ -1,0 +1,25 @@
+[{
+	"key": "distributor",
+	"value": "分销商"	
+},{
+	"key": "ecm",
+	"value": "主体"	
+},{
+	"key": "person",
+	"value": "用户"	
+},{
+	"key": "prdCategory",
+	"value": "产品分类"	
+},{
+	"key": "prdTag",
+	"value": "产品标签"	
+},{
+	"key": "product",
+	"value": "产品"	
+},{
+	"key": "region",
+	"value": "区域"	
+},{
+	"key": "industry",
+	"value": "行业"	
+}]

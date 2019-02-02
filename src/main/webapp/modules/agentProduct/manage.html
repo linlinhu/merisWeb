@@ -1,0 +1,305 @@
+<style>
+	.naver-choosen {
+		float: left;
+		position: relative;
+		padding: 10px 0;
+		line-height: 15px;
+		cursor: pointer;
+		color: #444;
+	}
+	.naver-choosen:hover > div {
+		color: #777;
+	}
+	.naver-choosen ul.choosen-lst {
+		position: absolute;
+		top: 35px;
+		display: none;
+		width: 180px;
+		background: #fff;
+		border: 1px solid #e7eaec;
+		z-index: 2;
+		padding: 0 10px;
+		border-radius: 3px;
+	}
+	.naver-choosen ul.choosen-lst li {
+		border-bottom: 1px dashed #e7eaec;
+	}
+	
+	.naver-choosen ul.choosen-lst li:last-child {
+		border: 0;
+	}
+	.naver-choosen ul.choosen-lst li > div {
+		margin: 10px 0;
+	}
+
+</style>
+<div class="wrapper-content">
+	<div class="row">
+		<div class="col-sm-12">
+		    <div class="ibox float-e-margins">
+		        <div class="ibox-title">
+		            <h5>代理品牌产品</h5>
+		            <div class="ibox-tools">
+		            </div>
+		        </div>
+		        <div class="ibox-content">
+					<#if agentBrands?? && agentBrands?size gt 0 >
+					<div class="tabs-container">
+		        	<div class="tabs-left">
+						<ul class="nav nav-tabs" style="margin:0">
+							<#list agentBrands as ab>
+							<#if ab_index == 0>
+								<#assign active = 'active'>
+							<#else>
+								<#assign active = ''>
+							</#if>
+							<li class="${active}">
+							    <a data-toggle="tab" href="#agentBrands${ab.brandId}" onclick="ajaxAgentProduct(${ab.brandId})">${ab.brandName}</a>
+							</li>
+							</#list>
+						</ul>
+						<div class="tab-content ">
+							<#list agentBrands as ab>
+							<#if ab_index == 0>
+								<#assign active = 'active'>
+							<#else>
+								<#assign active = ''>
+							</#if>
+							<div id="agentBrands${ab.brandId}" class="tab-pane ${active}">
+	                            <div class="panel-body" id="agentBrandsProducts${ab.brandId}-view"></div>
+							</div>
+							</#list>
+						</div>
+					</div>
+					</div>
+					<#else>
+						未代理品牌
+					</#if>
+		        </div>
+		    </div>
+		</div>
+	</div>
+</div>
+<script id="agentBrandsProductsData" type="text/html">
+{{# if (d.totalCount > 1 || d.name || d.sn) { }}
+<div class="filter-line">
+<form method="get" id="{{d.prefix}}SearchForm">
+	<input type="hidden" name="page" value="{{d.currentPage}}">
+	<input type="hidden" name="limit" value="{{d.limit}}">
+	<input placeholder="代理产品名称模糊查询" class="form-control" type="text"
+		name="name" value="{{d.name}}">
+	<input placeholder="代理产品编号模糊查询" class="form-control" type="text"
+		name="sn" value="{{d.sn}}">
+
+	<button type="button" class="btn btn-primary">
+		<i class="fa fa-search"></i>
+	</button>
+	{{# if (d.currentPage > 1 || d.name || d.sn) { }}
+	<button type="button" class="btn btn-default">
+		<i class="fa fa-refresh"></i>
+	</button>
+	{{# } }}
+</form>
+</div>
+{{# } }}
+<table class="footable table table-stripped toggle-arrow-tiny"
+id="{{d.prefix}}Table" data-page-size="{{d.limit}}"
+data-paging="false">
+<thead>
+	<tr>
+		<th data-toggle="true">产品名称</th>
+		<th>产品编号</th>
+		<th data-sort-ignore="true" style="width: 120px">分类</th>
+		<th style="width: 120px">品牌</th>
+		<th style="width: 160px" data-sort-ignore="true">产品图片</th>
+		<th>标签</th>
+		<th data-hide="all">基础特性</th>
+		<th data-hide="all">包装特性</th>
+		<th data-hide="all">描述</th>
+	</tr>
+</thead>
+<tbody>
+	{{# if(d.resultList && d.resultList.length > 0) { }}
+	{{# layui.each(d.resultList, function(index, item){ }}
+	<tr>
+		<td>{{item.name ? item.name : '-'}}</td>
+		<td>{{item.sn ? item.sn : '-'}}</td>
+		<td>
+		{{# if (item.prdCategories && item.prdCategories.length > 0) { }}
+		{{# layui.each(item.prdCategories, function(pc_index, pc){ }}
+			<span class="lst-label-2">{{pc.name}}</span>
+		{{# }); }}
+		{{# } else { }}
+		-
+		{{# } }}
+		</td>
+		<td>
+		{{item.brand ? item.brand.name : '-'}}
+		</td>
+		<td class="prd-pic-list-wrap" style="position: relative">
+		{{# if (item.pictures && item.pictures.length > 0) { }}
+		<div class="carousel slide" id="agentProPicCarousel{{index + 1}}">
+			<div class="carousel-inner">
+			{{# layui.each(item.pictures, function(p_index, p){ var active = '';}}
+			{{# if (p_index == 0) { active = 'active'; } }}
+				<div class="item {{active}}">
+					<img alt="image" class="img-responsive" src="{{p.url}}" alt="{{p.url}}" title="{{p.url}}" onerror="this.src='img/nopic.png'">
+				</div>
+			{{# }); }}
+			</div>
+			<a data-slide="prev" href="manage.html#agentProPicCarousel{{index + 1}}" class="left carousel-control">
+				<span class="icon-prev"></span>
+			</a>
+			<a data-slide="next" href="manage.html#agentProPicCarousel{{index + 1}}" class="right carousel-control">
+				<span class="icon-next"></span>
+			</a>
+		</div>
+		{{# } else { }}
+		-
+		{{# } }}
+		</td>
+		<td>
+		{{# if (item.tags && item.tags.length > 0) { }}
+		{{# layui.each(item.tags, function(t_index, t){ }}
+			<span class="lst-label">{{t.tagName}}</span>
+		{{# }); }}
+		{{# } else { }}
+		-
+		{{# } }}
+		</td>
+		<td>
+		{{# if (item.tpls && item.tpls.length > 0) { }}
+		{{# layui.each(item.tpls, function(pft_index, pft){ }}
+			{{# if (pft.type == 1) { }}
+				<div class="mgt10">
+					<span>{{pft.name}}</span>&nbsp;: 
+					{{# if (item.prdFeatures && item.prdFeatures.length > 0) { }}
+						{{# layui.each(item.prdFeatures, function(pf_index, pf){ }}
+							{{# if (pf.prdFeatureTemplateId && pf.prdFeatureTemplateId == pft.id && pf.value.length > 0) { }}
+								<span class="lst-label-1">{{pf.value}}</span>
+							{{# } }}
+						{{# }); }}
+					{{# } }}
+				</div>
+			{{# } }}
+		{{# }); }}
+		{{# } else { }}
+		-
+		{{# } }}
+		</td>
+		<td>
+		{{# if (item.tpls && item.tpls.length > 0) { }}
+		{{# layui.each(item.tpls, function(pft_index, pft){ }}
+			{{# if (pft.type == 2) { }}
+				<div class="mgt10">
+					<span>{{pft.name}}</span>&nbsp;: 
+					{{# if (item.prdFeatures && item.prdFeatures.length > 0) { }}
+						{{# layui.each(item.prdFeatures, function(pf_index, pf){ }}
+							{{# if (pf.prdFeatureTemplateId && pf.prdFeatureTemplateId == pft.id && pf.value.length > 0) { }}
+								<span class="lst-label-1">{{pf.value}}</span>
+							{{# } }}
+						{{# }); }}
+					{{# } }}
+				</div>
+			{{# } }}
+		{{# }); }}
+		{{# } else { }}
+		-
+		{{# } }}
+		</td>
+		<td>
+		{{item.describe ? item.describe : '-'}}
+		</td>
+	</tr>
+	{{# }); }}
+	{{# } else { }}
+	<tr>
+		<td colspan="9">暂无数据</td>
+	</tr>
+	{{# } }}
+</tbody>
+</table>
+<div class="text-right" id="{{d.prefix}}Page"></div>
+</script>
+<script type="text/javascript">
+ajaxAgentProduct(${agentBrands[0].brandId});
+/**
+ * 异步请求代理产品
+ */
+function ajaxAgentProduct(brandId) {
+	var prefix = 'agentBrandsProducts' + brandId,
+		formEl = $('#' + prefix + "SearchForm"),
+		page = $(formEl.find('input[name="page"]')[0]).val(),
+		limit = $(formEl.find('input[name="limit"]')[0]).val(),
+		name = $(formEl.find('input[name="name"]')[0]).val(),
+		sn = $(formEl.find('input[name="sn"]')[0]).val(),
+		tableEl = $('#' + prefix + 'Table'),
+		tpl = agentBrandsProductsData.innerHTML,
+		view = $('#' + prefix + '-view'),
+		datas = {};
+	
+	if (!brandId) {
+		return false;
+	}
+	page = page ? page : 1;
+	limit = limit ? limit : 10;
+	name = name ? name : '';
+	sn = sn ? sn : '';
+	
+	ajaxRequest({
+		url: base + 'agentProduct/getPages',
+		type: "get",
+		data: {
+			brandId: brandId,
+			page: page,
+			limit: limit,
+			name: name,
+			sn: sn
+		}
+	}, function(res) {
+		if (typeof res == 'string') {
+			res = JSON.parse(res);
+		}
+		if (!res.success) {
+			layer.msg('代理品牌查询失败' + (res.message ? '原因是：' + res.message : ''), {icon: 5});
+		} else {
+			datas = res.result;
+			datas.prefix = prefix;
+			datas.name = name;
+			datas.sn = sn;
+			
+			laytpl(tpl).render(datas, function(html){
+				view.html(html);
+				formEl = $('#' + prefix + "SearchForm");
+				formEl.find('button.btn-primary').attr('onclick', 'ajaxAgentProduct(' + brandId + ')');
+				formEl.find('button.btn-default').attr('onclick', 'resetAgentProduct(' + brandId + ')');
+				tableEl = $('#' + prefix + 'Table');
+				tableEl.footable();
+				if (datas.totalPageNum > 1) {
+					pageList({
+						modelName: prefix,
+						totalCount: datas.totalCount,
+						limit: datas.limit,
+						curr: datas.currentPage
+					}, function(obj) {
+						$(formEl.find('input[name="page"]')[0]).val(obj.curr);
+						$(formEl.find('input[name="limit"]')[0]).val(obj.limit);
+						ajaxAgentProduct(brandId);
+					})
+				}
+			});
+		}
+	});
+}
+
+function resetAgentProduct(brandId) {
+	var prefix = 'agentBrandsProducts' + brandId,
+		formEl = $(prefix + "SearchForm");
+	
+	$(formEl.find('input[name="page"]')[0]).val(1);
+	$(formEl.find('input[name="limit"]')[0]).val(10),
+	$(formEl.find('input[name="name"]')[0]).val('');
+	$(formEl.find('input[name="sn"]')[0]).val('');
+	ajaxAgentProduct(brandId);
+}
+</script>
